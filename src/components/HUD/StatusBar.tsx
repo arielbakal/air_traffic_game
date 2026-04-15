@@ -1,0 +1,41 @@
+import type { Wind } from "../../core/types";
+
+interface StatusBarProps {
+  simTime: number;
+  wind: Wind;
+  activeRunways: string[];
+}
+
+function formatClock(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+    .toString()
+    .padStart(2, "0");
+  const m = Math.floor((seconds % 3600) / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = Math.floor(seconds % 60)
+    .toString()
+    .padStart(2, "0");
+  return `${h}:${m}:${s}`;
+}
+
+export function StatusBar({ simTime, wind, activeRunways }: StatusBarProps) {
+  return (
+    <header className="status-bar panel">
+      <div className="status-item">
+        <span className="label">Sim Time</span>
+        <span>{formatClock(simTime)}</span>
+      </div>
+      <div className="status-item">
+        <span className="label">Wind</span>
+        <span>
+          {Math.round(wind.direction).toString().padStart(3, "0")} / {Math.round(wind.speed)}kt
+        </span>
+      </div>
+      <div className="status-item wide">
+        <span className="label">Active RWY</span>
+        <span>{activeRunways.join(", ")}</span>
+      </div>
+    </header>
+  );
+}
