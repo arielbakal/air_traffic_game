@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AIRPORTS } from "../../core/constants";
 import type { DifficultyLevel } from "../../core/types";
 
@@ -40,6 +41,7 @@ export function SimControls({
   onDifficultyChange,
   onActiveRunwaysChange,
 }: SimControlsProps) {
+  const [showRunwayEditor, setShowRunwayEditor] = useState(false);
   const runwayTokens = allRunwayTokens();
 
   const toggleRunway = (token: string) => {
@@ -87,21 +89,30 @@ export function SimControls({
         </select>
       </div>
 
-      <div className="command-block">
-        <label>Active runways</label>
-        <div className="runway-grid">
-          {runwayTokens.map((token) => (
-            <label key={token} className="runway-toggle">
-              <input
-                type="checkbox"
-                checked={activeRunways.includes(token)}
-                onChange={() => toggleRunway(token)}
-              />
-              {token}
-            </label>
-          ))}
-        </div>
+      <div className="runway-summary-row">
+        <span>{activeRunways.length} active runway ends</span>
+        <button type="button" onClick={() => setShowRunwayEditor((prev) => !prev)}>
+          {showRunwayEditor ? "Hide" : "Edit"}
+        </button>
       </div>
+
+      {showRunwayEditor && (
+        <div className="command-block compact-block">
+          <label>Active runways</label>
+          <div className="runway-grid">
+            {runwayTokens.map((token) => (
+              <label key={token} className="runway-toggle">
+                <input
+                  type="checkbox"
+                  checked={activeRunways.includes(token)}
+                  onChange={() => toggleRunway(token)}
+                />
+                {token}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

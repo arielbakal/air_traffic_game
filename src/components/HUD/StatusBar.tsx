@@ -19,6 +19,18 @@ function formatClock(seconds: number): string {
   return `${h}:${m}:${s}`;
 }
 
+function formatRunwaySummary(activeRunways: string[]): string {
+  if (activeRunways.length === 0) {
+    return "None";
+  }
+
+  if (activeRunways.length <= 3) {
+    return activeRunways.join(", ");
+  }
+
+  return `${activeRunways.slice(0, 3).join(", ")} +${activeRunways.length - 3}`;
+}
+
 export function StatusBar({ simTime, wind, activeRunways }: StatusBarProps) {
   return (
     <header className="status-bar panel">
@@ -34,7 +46,7 @@ export function StatusBar({ simTime, wind, activeRunways }: StatusBarProps) {
       </div>
       <div className="status-item wide">
         <span className="label">Active RWY</span>
-        <span>{activeRunways.join(", ")}</span>
+        <span>{formatRunwaySummary(activeRunways)}</span>
       </div>
     </header>
   );

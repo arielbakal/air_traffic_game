@@ -5,10 +5,8 @@ import { useSimStore } from "../store/useSimStore";
 import { EventLog } from "./HUD/EventLog";
 import { StatusBar } from "./HUD/StatusBar";
 import { SimMap } from "./Map/SimMap";
-import { CommandPanel } from "./Panels/CommandPanel";
-import { FlightStrip } from "./Panels/FlightStrip";
-import { FlightStripRack } from "./Panels/FlightStripRack";
-import { ScorePanel } from "./Panels/ScorePanel";
+import { CommandChatPanel } from "./Panels/CommandChatPanel";
+import { OperationsPanel } from "./Panels/OperationsPanel";
 import { SimControls } from "./Panels/SimControls";
 
 function App() {
@@ -43,17 +41,18 @@ function App() {
 
   return (
     <div className="app-shell">
-      <StatusBar simTime={simTime} wind={wind} activeRunways={activeRunways} />
-
       <main className="main-layout">
         <section className="map-pane">
           <SimMap aircraft={aircraft} conflicts={conflicts} onSelectAircraft={selectAircraft} />
         </section>
 
         <aside className="sidebar-pane">
-          <FlightStrip aircraft={selectedAircraft} simTime={simTime} />
-          <CommandPanel aircraft={selectedAircraft} activeRunways={activeRunways} onIssueCommand={issueCommand} />
-          <ScorePanel score={score} />
+          <StatusBar simTime={simTime} wind={wind} activeRunways={activeRunways} />
+          <CommandChatPanel
+            aircraft={selectedAircraft}
+            activeRunways={activeRunways}
+            onIssueCommand={issueCommand}
+          />
           <SimControls
             paused={paused}
             speed={speed}
@@ -65,11 +64,15 @@ function App() {
             onDifficultyChange={setDifficulty}
             onActiveRunwaysChange={setActiveRunways}
           />
-          <FlightStripRack aircraft={aircraft} selectedAircraftId={selectedAircraftId} onSelect={selectAircraft} />
+          <OperationsPanel
+            score={score}
+            aircraft={aircraft}
+            selectedAircraftId={selectedAircraftId}
+            onSelect={selectAircraft}
+          />
+          <EventLog events={events} />
         </aside>
       </main>
-
-      <EventLog events={events} />
     </div>
   );
 }

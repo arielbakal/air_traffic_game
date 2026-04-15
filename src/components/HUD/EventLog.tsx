@@ -19,11 +19,13 @@ function formatEventTime(timestamp: number): string {
 }
 
 export function EventLog({ events }: EventLogProps) {
+  const visibleEvents = events.slice(0, 24);
+
   return (
     <div className="panel event-log">
-      <h3>Event Log</h3>
+      <h3>Event Log ({events.length})</h3>
       <div className="event-list">
-        {events.map((event, index) => (
+        {visibleEvents.map((event, index) => (
           <div key={`${event.timestamp}-${index}`} className={`event-item ${event.severity}`}>
             <span className="event-time">[{formatEventTime(event.timestamp)}]</span>
             <span>{event.message}</span>
