@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSimStore } from "../store/useSimStore";
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -20,6 +20,11 @@ export function useKeyboard(): void {
   const setSpeed = useSimStore((state) => state.setSpeed);
   const selectAircraft = useSimStore((state) => state.selectAircraft);
 
+  const pausedRef = useRef(paused);
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (isTypingTarget(event.target)) {
@@ -28,7 +33,7 @@ export function useKeyboard(): void {
 
       if (event.key === " " || event.code === "Space") {
         event.preventDefault();
-        setPaused(!paused);
+        setPaused(!pausedRef.current);
       }
 
       if (event.key === "1") {
@@ -50,5 +55,5 @@ export function useKeyboard(): void {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [paused, selectAircraft, setPaused, setSpeed]);
+  }, [selectAircraft, setPaused, setSpeed]);
 }
