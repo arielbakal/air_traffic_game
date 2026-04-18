@@ -336,7 +336,9 @@ export const useSimStore = create<SimStore>((set) => ({
       const approachStep = updateApproaches(working, now);
       working = approachStep.aircraftList;
 
-      const conflicts = detectConflicts(working.filter((aircraft) => aircraft.status !== "landed"));
+      const conflicts = detectConflicts(
+        working.filter((aircraft) => aircraft.status !== "landed" && aircraft.status !== "taxiing"),
+      );
       const callsignsInConflict = new Set(
         conflicts.flatMap((conflict) => [conflict.aircraft1, conflict.aircraft2]),
       );
