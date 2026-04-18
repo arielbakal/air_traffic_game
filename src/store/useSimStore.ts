@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { applyCommand } from "../core/commands";
-import { DEFAULT_ACTIVE_RUNWAYS, resolveRunwayToken } from "../core/constants";
+import { DEFAULT_ACTIVE_RUNWAYS, DIFFICULTY_CONFIG, resolveRunwayToken } from "../core/constants";
 import { updateApproaches } from "../core/approach";
 import { updateAircraftPhysicsAtTime } from "../core/physics";
 import { detectConflicts, hasSeparationViolation } from "../core/separation";
@@ -176,8 +176,7 @@ function applyMissionObjectives(
   };
 }
 
-function initialGameState(seed = 20260415): GameState {
-  const difficulty: DifficultyLevel = "junior";
+function initialGameState(seed = 20260415, difficulty: DifficultyLevel = "junior"): GameState {
   const activeRunways = [...DEFAULT_ACTIVE_RUNWAYS];
 
   let nextSeed = seed;
@@ -187,7 +186,8 @@ function initialGameState(seed = 20260415): GameState {
     return generated.value;
   };
 
-  const missionScenario = initialMissionScenario(activeRunways, 0, random);
+  const { startCount } = DIFFICULTY_CONFIG[difficulty];
+  const missionScenario = initialMissionScenario(activeRunways, 0, random, startCount);
   const mission = summarizeMission(missionScenario.missionFlights);
   const initialAircraft = missionScenario.aircraft;
 
@@ -409,13 +409,15 @@ export const useSimStore = create<SimStore>((set) => ({
   },
 
   restart: () => {
-    const resetState = initialGameState(20260415);
-    set({
-      ...resetState,
-      selectedAircraftId: null,
-      seed: 20260415,
-      flightIndex: resetState.aircraft.size,
-      seenConflicts: new Set<string>(),
+    set((state) => {
+      const resetState = initialGameState(20260415, state.difficulty);
+      return {
+        ...resetState,
+        selectedAircraftId: null,
+        seed: 20260415,
+        flightIndex: resetState.aircraft.size,
+        seenConflicts: new Set<string>(),
+      };
     });
   },
 }));

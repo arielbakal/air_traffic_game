@@ -220,11 +220,13 @@ export function initialMissionScenario(
   activeRunways: string[],
   time: number,
   random: () => number,
+  startCount = MISSION_SEED_FLIGHTS.length,
 ): MissionScenario {
   const aircraft: Aircraft[] = [];
   const missionFlights: MissionFlightState[] = [];
 
-  for (let index = 0; index < MISSION_SEED_FLIGHTS.length; index += 1) {
+  const count = Math.min(startCount, MISSION_SEED_FLIGHTS.length);
+  for (let index = 0; index < count; index += 1) {
     const template = MISSION_SEED_FLIGHTS[index];
     const destination = pickDestination(template.origin, random);
     const flight = spawnMissionFlight(template, destination, index + 1, activeRunways, time);
