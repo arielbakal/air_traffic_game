@@ -4,7 +4,7 @@ import { useSimStore } from "../store/useSimStore";
 const TICK_RATE = 10;
 const FIXED_DT = 1 / TICK_RATE;
 
-export function useGameLoop(): void {
+export function useGameLoop(enabled = true): void {
   const paused = useSimStore((state) => state.paused);
   const missionComplete = useSimStore((state) => state.mission.isComplete);
   const speed = useSimStore((state) => state.speed);
@@ -21,7 +21,7 @@ export function useGameLoop(): void {
       const delta = Math.min((now - lastTime.current) / 1000, 0.25);
       lastTime.current = now;
 
-      if (!paused && !missionComplete) {
+      if (enabled && !paused && !missionComplete) {
         accumulator.current += delta * speed;
         while (accumulator.current >= FIXED_DT) {
           tick(FIXED_DT);
@@ -34,5 +34,5 @@ export function useGameLoop(): void {
 
     frameId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameId);
-  }, [missionComplete, paused, speed, tick]);
+  }, [enabled, missionComplete, paused, speed, tick]);
 }

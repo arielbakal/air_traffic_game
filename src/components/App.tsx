@@ -2,18 +2,25 @@ import { useMemo, useState } from "react";
 import { useGameLoop } from "../hooks/useGameLoop";
 import { useKeyboard } from "../hooks/useKeyboard";
 import { useSimStore } from "../store/useSimStore";
+import { useAgentSocket, type ControllerMode } from "../hooks/useAgentSocket";
 import { DebugOverlay } from "./Debug/DebugOverlay";
 import { EventLog } from "./HUD/EventLog";
 import { MissionResultOverlay } from "./HUD/MissionResultOverlay";
 import { SimDock } from "./HUD/SimDock";
 import { StatusBar } from "./HUD/StatusBar";
+import { ControllerModeToggle } from "./HUD/ControllerModeToggle";
 import { SimMap } from "./Map/SimMap";
 import { CommandChatPanel } from "./Panels/CommandChatPanel";
 import { OperationsPanel } from "./Panels/OperationsPanel";
+import { AgentPanel } from "./Panels/AgentPanel";
 
 function App() {
   const [debugVisible, setDebugVisible] = useState(false);
-  useGameLoop();
+  const [controllerMode, setControllerMode] = useState<ControllerMode>("human");
+
+  const { connected, agentStatus, lastDecision, overrideCount, sendCommand, changeMode, setPaused: socketSetPaused, setSpeed: socketSetSpeed, restart: socketRestart } = useAgentSocket(controllerMode);
+
+  useGameLoop(controllerMode === "human");
   useKeyboard(() => setDebugVisible((v) => !v));
 
   const aircraftMap = useSimStore((state) => state.aircraft);
@@ -28,10 +35,10 @@ function App() {
   const speed = useSimStore((state) => state.speed);
 
   const selectAircraft = useSimStore((state) => state.selectAircraft);
-  const issueCommand = useSimStore((state) => state.issueCommand);
-  const setPaused = useSimStore((state) => state.setPaused);
-  const setSpeed = useSimStore((state) => state.setSpeed);
-  const restart = useSimStore((state) => state.restart);
+  const issueCommandLocal = useSimStore((state) => state.issueCommand);
+  const setPausedLocal = useSimStore((state) => state.setPaused);
+  const setSpeedLocal = useSimStore((state) => state.setSpeed);
+  const restartLocal = useSimStore((state) => state.restart);
   const loadScenario = useSimStore((state) => state.loadScenario);
   const setActiveRunways = useSimStore((state) => state.setActiveRunways);
 
@@ -40,6 +47,45 @@ function App() {
   }, [aircraftMap]);
 
   const selectedAircraft = selectedAircraftId ? aircraftMap.get(selectedAircraftId) ?? null : null;
+
+  const handleModeChange = (mode: ControllerMode) => {
+    setControllerMode(mode);
+    changeMode(mode);
+  };
+
+  const handlePauseToggle = () => {
+    if (controllerMode === "human") {
+      setPausedLocal(!paused);
+    } else {
+      socketSetPaused(!paused);
+    }
+  };
+
+  const handleSpeedChange = (s: 1 | 2 | 4) => {
+    if (controllerMode === "human") {
+      setSpeedLocal(s);
+    } else {
+      socketSetSpeed(s);
+    }
+  };
+
+  const handleRestart = () => {
+    if (controllerMode === "human") {
+      restartLocal();
+    } else {
+      socketRestart();
+    }
+  };
+
+  const handleIssueCommand = useSimStore((state) => state.issueCommand);
+  const issueCommand = controllerMode === "human"
+    ? issueCommandLocal
+    : (cmd: Parameters<typeof handleIssueCommand>[0]) => {
+        if (!selectedAircraftId) return;
+        const ac = aircraftMap.get(selectedAircraftId);
+        if (!ac) return;
+        sendCommand(ac.callsign, cmd);
+      };
 
   return (
     <div className="app-shell">
@@ -50,16 +96,30 @@ function App() {
             paused={paused}
             speed={speed}
             activeRunways={activeRunways}
-            onPauseToggle={() => setPaused(!paused)}
-            onSpeedChange={setSpeed}
-            onRestart={restart}
+            onPauseToggle={handlePauseToggle}
+            onSpeedChange={handleSpeedChange}
+            onRestart={handleRestart}
             onActiveRunwaysChange={setActiveRunways}
-            onLoadScenario={loadScenario}
+            onLoadScenario={controllerMode === "human" ? loadScenario : undefined}
+            modeToggle={
+              <ControllerModeToggle
+                mode={controllerMode}
+                connected={connected}
+                onChange={handleModeChange}
+              />
+            }
           />
         </section>
 
         <aside className="sidebar-pane">
           <StatusBar simTime={simTime} activeRunways={activeRunways} mission={mission} />
+          <AgentPanel
+            mode={controllerMode}
+            connected={connected}
+            agentStatus={agentStatus}
+            lastDecision={lastDecision}
+            overrideCount={overrideCount}
+          />
           <CommandChatPanel
             aircraft={selectedAircraft}
             activeRunways={activeRunways}
@@ -76,7 +136,7 @@ function App() {
         </aside>
       </main>
 
-      <MissionResultOverlay mission={mission} score={score} simTime={simTime} onRestart={restart} />
+      <MissionResultOverlay mission={mission} score={score} simTime={simTime} onRestart={handleRestart} />
       <DebugOverlay visible={debugVisible} />
     </div>
   );

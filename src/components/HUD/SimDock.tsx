@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { AIRPORTS } from "@atc/core";
 import { SCENARIOS, buildScenarioAircraft } from "@atc/core";
 import type { Aircraft } from "@atc/core";
+import type { ReactNode } from "react";
 
 interface SimDockProps {
   paused: boolean;
@@ -12,6 +13,7 @@ interface SimDockProps {
   onRestart: () => void;
   onActiveRunwaysChange: (runways: string[]) => void;
   onLoadScenario?: (aircraft: Aircraft[]) => void;
+  modeToggle?: ReactNode;
 }
 
 function allRunwayTokens(): string[] {
@@ -101,6 +103,7 @@ export function SimDock({
   onRestart,
   onActiveRunwaysChange,
   onLoadScenario,
+  modeToggle,
 }: SimDockProps) {
   const [showRunwayEditor, setShowRunwayEditor] = useState(false);
   const [showScenarios, setShowScenarios] = useState(false);
@@ -178,6 +181,11 @@ export function SimDock({
       )}
 
       <div className="sim-dock" role="toolbar" aria-label="Simulation controls">
+        {modeToggle && (
+          <div style={{ display: "flex", alignItems: "center", marginRight: 6 }}>
+            {modeToggle}
+          </div>
+        )}
         <button
           type="button"
           className="sim-dock-btn"
