@@ -1,5 +1,4 @@
-import { hasSeparationViolation } from "./separation";
-import type { Aircraft, ConflictPair, GameEvent, ScoreState } from "./types";
+import type { Aircraft, GameEvent, ScoreState } from "./types";
 
 const LANDING_BONUS = {
   heavy: 300,
@@ -64,19 +63,6 @@ export function updateScoreFromEvents(
   }
 
   return next;
-}
-
-export function updateScoreFromConflicts(score: ScoreState, conflicts: ConflictPair[]): ScoreState {
-  const violations = conflicts.filter(hasSeparationViolation);
-  if (violations.length === 0) {
-    return score;
-  }
-
-  return {
-    ...score,
-    separationViolations: score.separationViolations + violations.length,
-    totalScore: score.totalScore - violations.length * 500,
-  };
 }
 
 export function applyHoldingPenalty(score: ScoreState, aircraftList: Aircraft[], dt: number): ScoreState {

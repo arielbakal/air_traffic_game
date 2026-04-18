@@ -3,12 +3,11 @@ import { applyCommand } from "../core/commands";
 import { DEFAULT_ACTIVE_RUNWAYS, resolveRunwayToken } from "../core/constants";
 import { updateApproaches } from "../core/approach";
 import { updateAircraftPhysicsAtTime } from "../core/physics";
-import { detectConflicts } from "../core/separation";
+import { detectConflicts, hasSeparationViolation } from "../core/separation";
 import {
   applyHoldingPenalty,
   createInitialScore,
   deriveScoreMetrics,
-  updateScoreFromConflicts,
   updateScoreFromEvents,
 } from "../core/scoring";
 import { initialMissionScenario } from "../core/spawner";
@@ -351,6 +350,8 @@ export const useSimStore = create<SimStore>((set) => ({
 
       const conflictEvents: GameEvent[] = [];
       const seenConflicts = new Set(state.seenConflicts);
+      let newViolationCount = 0;
+      let newViolationPenalty = 0;
       for (const conflict of conflicts) {
         const key = conflictKey(conflict);
         if (!seenConflicts.has(key)) {
@@ -361,6 +362,10 @@ export const useSimStore = create<SimStore>((set) => ({
             severity: conflict.severity === "warning" ? "warning" : "critical",
             message: `${conflict.aircraft1} and ${conflict.aircraft2} ${conflict.severity} ${conflict.distance.toFixed(1)}nm/${Math.round(conflict.altDiff)}ft`,
           });
+          if (hasSeparationViolation(conflict)) {
+            newViolationCount += 1;
+            newViolationPenalty += 500;
+          }
         }
       }
 
@@ -368,7 +373,13 @@ export const useSimStore = create<SimStore>((set) => ({
       const byCallsign = new Map(working.map((aircraft) => [aircraft.callsign, aircraft]));
 
       let score: ScoreState = updateScoreFromEvents(state.score, allEvents, byCallsign);
-      score = updateScoreFromConflicts(score, conflicts);
+      if (newViolationCount > 0) {
+        score = {
+          ...score,
+          separationViolations: score.separationViolations + newViolationCount,
+          totalScore: score.totalScore - newViolationPenalty,
+        };
+      }
       score = applyHoldingPenalty(score, working, dt);
       score = deriveScoreMetrics(score, working);
       score = syncScoreWithMission(score, state.mission);
