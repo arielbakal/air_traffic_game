@@ -85,7 +85,7 @@ export function AircraftMarker({ aircraft, severity, onSelect }: AircraftMarkerP
       <Marker
         position={[aircraft.position.lat, aircraft.position.lng]}
         icon={createAircraftIcon(aircraft, severity)}
-        eventHandlers={{ click: () => onSelect(aircraft.id) }}
+        eventHandlers={{ click: (e) => { e.originalEvent.stopPropagation(); onSelect(aircraft.id); } }}
       >
         <Tooltip direction="bottom" permanent offset={[0, 16]} className="aircraft-tooltip">
           {aircraft.callsign} FL{Math.round(aircraft.altitude / 100).toString().padStart(3, "0")}
