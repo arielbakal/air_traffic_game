@@ -228,6 +228,7 @@ export interface SimStore extends GameState {
   tick: (dt: number) => void;
   restart: () => void;
   loadScenario: (aircraft: Aircraft[]) => void;
+  loadServerState: (partial: Partial<GameState>) => void;
 }
 
 const base = initialGameState();
@@ -450,6 +451,14 @@ export const useSimStore = create<SimStore>((set) => ({
         debugCommands: [],
       };
     });
+  },
+
+  loadServerState: (partial) => {
+    set((state) => ({
+      ...state,
+      ...partial,
+      selectedAircraftId: state.selectedAircraftId,
+    }));
   },
 }));
 
