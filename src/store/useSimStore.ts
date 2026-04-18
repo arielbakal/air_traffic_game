@@ -1,16 +1,16 @@
 import { create } from "zustand";
-import { applyCommand } from "../core/commands";
-import { DEFAULT_ACTIVE_RUNWAYS, DIFFICULTY_CONFIG, resolveRunwayToken } from "../core/constants";
-import { updateApproaches } from "../core/approach";
-import { updateAircraftPhysicsAtTime } from "../core/physics";
-import { detectConflicts, hasSeparationViolation } from "../core/separation";
+import { applyCommand } from "@atc/core";
+import { DEFAULT_ACTIVE_RUNWAYS, DIFFICULTY_CONFIG, resolveRunwayToken } from "@atc/core";
+import { updateApproaches } from "@atc/core";
+import { updateAircraftPhysicsAtTime } from "@atc/core";
+import { detectConflicts, hasSeparationViolation } from "@atc/core";
 import {
   applyHoldingPenalty,
   createInitialScore,
   deriveScoreMetrics,
   updateScoreFromEvents,
-} from "../core/scoring";
-import { initialMissionScenario } from "../core/spawner";
+} from "@atc/core";
+import { initialMissionScenario } from "@atc/core";
 import type {
   Aircraft,
   CommandType,
@@ -21,7 +21,7 @@ import type {
   MissionFlightState,
   MissionState,
   ScoreState,
-} from "../core/types";
+} from "@atc/core";
 
 const MAX_EVENTS = 180;
 

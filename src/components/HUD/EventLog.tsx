@@ -1,4 +1,4 @@
-import type { GameEvent } from "../../core/types";
+import type { GameEvent } from "@atc/core";
 
 interface EventLogProps {
   events: GameEvent[];

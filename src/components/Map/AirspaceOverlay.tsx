@@ -1,5 +1,5 @@
 import { Circle, CircleMarker, Tooltip } from "react-leaflet";
-import { AIRPORTS, TMA } from "../../core/constants";
+import { AIRPORTS, TMA } from "@atc/core";
 
 export function AirspaceOverlay() {
   return (

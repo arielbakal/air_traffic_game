@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { Polyline, Tooltip } from "react-leaflet";
-import { AIRPORTS } from "../../core/constants";
-import { moveAlongHeading } from "../../core/geo";
+import { AIRPORTS } from "@atc/core";
+import { moveAlongHeading } from "@atc/core";
 
 const ILS_CENTRELINE_NM = 15;
 

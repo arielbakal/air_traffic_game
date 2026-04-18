@@ -1,4 +1,4 @@
-import type { MissionState } from "../../core/types";
+import type { MissionState } from "@atc/core";
 
 interface StatusBarProps {
   simTime: number;

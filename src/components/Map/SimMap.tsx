@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { MapContainer, TileLayer, useMapEvents } from "react-leaflet";
-import { MAP_CENTER, MAP_ZOOM } from "../../core/constants";
-import type { Aircraft, ConflictPair } from "../../core/types";
+import { MAP_CENTER, MAP_ZOOM } from "@atc/core";
+import type { Aircraft, ConflictPair } from "@atc/core";
 import { AircraftMarker } from "./AircraftMarker";
 import { AirspaceOverlay } from "./AirspaceOverlay";
 import { ConflictAlert } from "./ConflictAlert";

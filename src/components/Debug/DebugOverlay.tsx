@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSimStore } from "../../store/useSimStore";
-import type { Aircraft } from "../../core/types";
+import type { Aircraft } from "@atc/core";
 
 function fmtCmd(entry: { callsign: string; command: { type: string; [k: string]: unknown } }): string {
   const { type, ...rest } = entry.command;

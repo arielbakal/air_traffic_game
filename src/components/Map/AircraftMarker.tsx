@@ -1,8 +1,8 @@
 import { divIcon } from "leaflet";
 import { Marker, Polyline, Tooltip } from "react-leaflet";
-import { projectPosition } from "../../core/physics";
-import { moveAlongHeading } from "../../core/geo";
-import type { Aircraft } from "../../core/types";
+import { projectPosition } from "@atc/core";
+import { moveAlongHeading } from "@atc/core";
+import type { Aircraft } from "@atc/core";
 
 interface AircraftMarkerProps {
   aircraft: Aircraft;

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { parseChatCommand } from "../../core/chatCommandParser";
-import type { Aircraft, CommandType } from "../../core/types";
+import { parseChatCommand } from "@atc/core";
+import type { Aircraft, CommandType } from "@atc/core";
 
 interface ChatEntry {
   id: number;

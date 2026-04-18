@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { AIRPORTS } from "../../core/constants";
-import { SCENARIOS, buildScenarioAircraft } from "../../core/scenarios";
-import type { Aircraft } from "../../core/types";
+import { AIRPORTS } from "@atc/core";
+import { SCENARIOS, buildScenarioAircraft } from "@atc/core";
+import type { Aircraft } from "@atc/core";
 
 interface SimDockProps {
   paused: boolean;

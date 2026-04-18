@@ -1,5 +1,5 @@
 import { Polyline, Tooltip } from "react-leaflet";
-import type { Aircraft, ConflictPair } from "../../core/types";
+import type { Aircraft, ConflictPair } from "@atc/core";
 
 interface ConflictAlertProps {
   conflicts: ConflictPair[];

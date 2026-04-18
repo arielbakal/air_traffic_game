@@ -1,4 +1,4 @@
-import type { MissionState, ScoreState } from "../../core/types";
+import type { MissionState, ScoreState } from "@atc/core";
 
 interface MissionResultOverlayProps {
   mission: MissionState;

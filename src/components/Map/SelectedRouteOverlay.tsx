@@ -1,5 +1,5 @@
 import { CircleMarker, Polyline } from "react-leaflet";
-import type { Aircraft, Position } from "../../core/types";
+import type { Aircraft, Position } from "@atc/core";
 
 interface SelectedRouteOverlayProps {
   aircraft: Aircraft | null;

@@ -1,4 +1,4 @@
-import type { Aircraft, MissionState, ScoreState } from "../../core/types";
+import type { Aircraft, MissionState, ScoreState } from "@atc/core";
 
 interface OperationsPanelProps {
   score: ScoreState;
