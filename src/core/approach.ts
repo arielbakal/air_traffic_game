@@ -129,6 +129,7 @@ export function updateApproaches(
           goingAround: false,
           onApproach: false,
           commandRunway: undefined,
+          assignedRunway: null,
         };
       }
     }
