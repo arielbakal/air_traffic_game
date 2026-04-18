@@ -286,7 +286,7 @@ export const useSimStore = create<SimStore>((set) => ({
       if (applied.result.ok && command.type === "takeoff") {
         events.push({
           timestamp: state.time,
-          type: "info",
+          type: "takeoff",
           severity: "info",
           message: `${target.callsign} departed ${command.runway}`,
         });
