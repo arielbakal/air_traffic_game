@@ -349,7 +349,10 @@ export const useSimStore = create<SimStore>((set) => ({
         }));
 
       const conflictEvents: GameEvent[] = [];
-      const seenConflicts = new Set(state.seenConflicts);
+      const activeConflictKeys = new Set(conflicts.map(conflictKey));
+      const seenConflicts = new Set(
+        [...state.seenConflicts].filter((key) => activeConflictKeys.has(key)),
+      );
       let newViolationCount = 0;
       let newViolationPenalty = 0;
       for (const conflict of conflicts) {
