@@ -35,6 +35,7 @@ export function ConflictAlert({ conflicts, aircraft }: ConflictAlertProps) {
               [a.position.lat, a.position.lng],
               [b.position.lat, b.position.lng],
             ]}
+            className="conflict-line"
             pathOptions={{
               color: conflictColor(conflict.severity),
               weight: 2,

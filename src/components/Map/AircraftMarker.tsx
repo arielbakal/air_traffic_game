@@ -60,6 +60,7 @@ export function AircraftMarker({ aircraft, severity, onSelect }: AircraftMarkerP
           [aircraft.position.lat, aircraft.position.lng],
           [projected.lat, projected.lng],
         ]}
+        className="aircraft-vector-line"
         pathOptions={{
           color: aircraft.isSelected ? "#4488ff" : "#2adf90",
           weight: 1,
