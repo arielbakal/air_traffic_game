@@ -57,7 +57,7 @@ export function AircraftMarker({ aircraft, severity, onSelect }: AircraftMarkerP
         pathOptions={{
           color: aircraft.isSelected ? "#4488ff" : "#2adf90",
           weight: 1,
-          opacity: 0.55,
+          opacity: aircraft.isSelected ? 0.26 : 0.55,
           dashArray: "4 4",
         }}
       />

@@ -14,7 +14,7 @@ interface CommandChatPanelProps {
   onIssueCommand: (command: CommandType) => void;
 }
 
-const HELP_TEXT = "Examples: hdg 180 | alt 5000 | alt FL120 | spd 220 | app SAEZ-11 | hold | ga | takeoff SAEZ-11";
+const HELP_TEXT = "Examples: hdg 180 | alt 5000 | alt FL120 | spd 220 | app SABE-13 | hold | ga | takeoff SABE-13";
 
 export function CommandChatPanel({ aircraft, activeRunways, onIssueCommand }: CommandChatPanelProps) {
   const [input, setInput] = useState("");
@@ -42,7 +42,10 @@ export function CommandChatPanel({ aircraft, activeRunways, onIssueCommand }: Co
       return;
     }
 
-    const parsed = parseChatCommand(text, activeRunways);
+    const parsed = parseChatCommand(text, activeRunways, {
+      takeoffAirport: aircraft.origin,
+      approachAirport: aircraft.destination,
+    });
     if (!parsed.ok) {
       appendMessage("system", parsed.error);
       setInput("");

@@ -94,6 +94,10 @@ export interface Aircraft {
   routeDistanceNm: number;
   directDistanceNm: number;
   holdTime: number;
+  routeWaypoints: Position[];
+  routeWaypointIndex: number;
+  manualRouteUntil?: number;
+  manualRouteIssuedAt?: number;
   removeAt?: number;
 }
 
@@ -125,6 +129,27 @@ export interface ScoreState {
   flightsHandled: number;
   averageDelay: number;
   efficiency: number;
+}
+
+export interface MissionFlightState {
+  flightId: string;
+  callsign: string;
+  origin: string;
+  destination: string;
+  departureCleared: boolean;
+  approachCleared: boolean;
+  completed: boolean;
+}
+
+export interface MissionState {
+  flights: MissionFlightState[];
+  totalFlights: number;
+  totalObjectives: number;
+  completedFlights: number;
+  completedObjectives: number;
+  failedFlights: number;
+  isComplete: boolean;
+  success: boolean;
 }
 
 export interface Wind {
@@ -169,6 +194,7 @@ export interface GameState {
   events: GameEvent[];
   difficulty: DifficultyLevel;
   nextSpawnIn: number;
+  mission: MissionState;
 }
 
 export interface FlightTemplate {

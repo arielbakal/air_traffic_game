@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import { MapContainer, TileLayer, useMapEvents } from "react-leaflet";
-import { MAP_CENTER, MAP_ZOOM, TMA } from "../../core/constants";
+import { MAP_CENTER, MAP_ZOOM } from "../../core/constants";
 import type { Aircraft, ConflictPair } from "../../core/types";
 import { AircraftMarker } from "./AircraftMarker";
 import { AirspaceOverlay } from "./AirspaceOverlay";
 import { ConflictAlert } from "./ConflictAlert";
 import { RunwayOverlay } from "./RunwayOverlay";
+import { SelectedRouteOverlay } from "./SelectedRouteOverlay";
 
 interface SimMapProps {
   aircraft: Aircraft[];
@@ -48,10 +49,10 @@ export function SimMap({ aircraft, conflicts, onSelectAircraft }: SimMapProps) {
     return result;
   }, [conflicts]);
 
-  const maxBounds: [[number, number], [number, number]] = [
-    [TMA.center.lat - 2.1, TMA.center.lng - 2.25],
-    [TMA.center.lat + 2.1, TMA.center.lng + 2.25],
-  ];
+  const selectedAircraft = useMemo(
+    () => aircraft.find((item) => item.isSelected) ?? null,
+    [aircraft],
+  );
 
   return (
     <MapContainer
@@ -59,8 +60,6 @@ export function SimMap({ aircraft, conflicts, onSelectAircraft }: SimMapProps) {
       zoom={MAP_ZOOM}
       minZoom={7}
       maxZoom={12}
-      maxBounds={maxBounds}
-      maxBoundsViscosity={0.7}
       zoomControl={false}
       preferCanvas
       className="sim-map"
@@ -76,6 +75,7 @@ export function SimMap({ aircraft, conflicts, onSelectAircraft }: SimMapProps) {
       <AirspaceOverlay />
       <RunwayOverlay />
       <ConflictAlert conflicts={conflicts} aircraft={aircraft} />
+      <SelectedRouteOverlay aircraft={selectedAircraft} />
 
       {aircraft.map((item) => (
         <AircraftMarker

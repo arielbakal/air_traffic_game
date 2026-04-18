@@ -1,20 +1,26 @@
-import type { Aircraft, ScoreState } from "../../core/types";
+import type { Aircraft, MissionState, ScoreState } from "../../core/types";
 
 interface OperationsPanelProps {
   score: ScoreState;
+  mission: MissionState;
   aircraft: Aircraft[];
   selectedAircraftId: string | null;
   onSelect: (id: string) => void;
 }
 
-export function OperationsPanel({ score, aircraft, selectedAircraftId, onSelect }: OperationsPanelProps) {
+export function OperationsPanel({ score, mission, aircraft, selectedAircraftId, onSelect }: OperationsPanelProps) {
   return (
     <div className="panel operations-panel">
       <h3>Operations</h3>
 
       <div className="ops-topline">
         <span className="ops-pill">{Math.round(score.totalScore)} pts</span>
-        <span className="ops-pill">{score.flightsHandled} handled</span>
+        <span className="ops-pill">
+          Obj {mission.completedObjectives}/{mission.totalObjectives}
+        </span>
+        <span className="ops-pill">
+          Flights {mission.completedFlights}/{mission.totalFlights}
+        </span>
         <span className="ops-pill">{Math.round(score.efficiency)}% eff</span>
         <span className="ops-pill warn">{score.separationViolations} vio</span>
       </div>
@@ -44,7 +50,7 @@ export function OperationsPanel({ score, aircraft, selectedAircraftId, onSelect 
             onClick={() => onSelect(item.id)}
           >
             <span className="callsign">{item.callsign}</span>
-            <span>{item.status}</span>
+            <span>{item.origin}-{item.destination}</span>
             <span>FL{Math.round(item.altitude / 100).toString().padStart(3, "0")}</span>
             <span className={item.hasConflict ? "warn" : "ok"}>{item.hasConflict ? "ALERT" : "OK"}</span>
           </button>

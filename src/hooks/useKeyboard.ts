@@ -1,6 +1,19 @@
 import { useEffect } from "react";
 import { useSimStore } from "../store/useSimStore";
 
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+    return true;
+  }
+
+  return target.isContentEditable || target.closest("[contenteditable='true']") !== null;
+}
+
 export function useKeyboard(): void {
   const paused = useSimStore((state) => state.paused);
   const setPaused = useSimStore((state) => state.setPaused);
@@ -9,6 +22,10 @@ export function useKeyboard(): void {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (isTypingTarget(event.target)) {
+        return;
+      }
+
       if (event.key === " " || event.code === "Space") {
         event.preventDefault();
         setPaused(!paused);

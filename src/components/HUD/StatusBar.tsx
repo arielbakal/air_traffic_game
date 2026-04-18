@@ -1,9 +1,10 @@
-import type { Wind } from "../../core/types";
+import type { MissionState, Wind } from "../../core/types";
 
 interface StatusBarProps {
   simTime: number;
   wind: Wind;
   activeRunways: string[];
+  mission: MissionState;
 }
 
 function formatClock(seconds: number): string {
@@ -31,7 +32,7 @@ function formatRunwaySummary(activeRunways: string[]): string {
   return `${activeRunways.slice(0, 3).join(", ")} +${activeRunways.length - 3}`;
 }
 
-export function StatusBar({ simTime, wind, activeRunways }: StatusBarProps) {
+export function StatusBar({ simTime, wind, activeRunways, mission }: StatusBarProps) {
   return (
     <header className="status-bar panel">
       <div className="status-item">
@@ -47,6 +48,12 @@ export function StatusBar({ simTime, wind, activeRunways }: StatusBarProps) {
       <div className="status-item wide">
         <span className="label">Active RWY</span>
         <span>{formatRunwaySummary(activeRunways)}</span>
+      </div>
+      <div className="status-item">
+        <span className="label">Mission</span>
+        <span>
+          {mission.completedObjectives}/{mission.totalObjectives}
+        </span>
       </div>
     </header>
   );

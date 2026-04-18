@@ -1,20 +1,15 @@
 import { useState } from "react";
 import { AIRPORTS } from "../../core/constants";
-import type { DifficultyLevel } from "../../core/types";
 
 interface SimControlsProps {
   paused: boolean;
   speed: 1 | 2 | 4;
-  difficulty: DifficultyLevel;
   activeRunways: string[];
   onPauseToggle: () => void;
   onSpeedChange: (speed: 1 | 2 | 4) => void;
   onRestart: () => void;
-  onDifficultyChange: (difficulty: DifficultyLevel) => void;
   onActiveRunwaysChange: (runways: string[]) => void;
 }
-
-const DIFFICULTIES: DifficultyLevel[] = ["student", "junior", "controller", "senior", "chief"];
 
 function allRunwayTokens(): string[] {
   const tokens: string[] = [];
@@ -33,12 +28,10 @@ function allRunwayTokens(): string[] {
 export function SimControls({
   paused,
   speed,
-  difficulty,
   activeRunways,
   onPauseToggle,
   onSpeedChange,
   onRestart,
-  onDifficultyChange,
   onActiveRunwaysChange,
 }: SimControlsProps) {
   const [showRunwayEditor, setShowRunwayEditor] = useState(false);
@@ -76,17 +69,6 @@ export function SimControls({
         <button type="button" className={speed === 4 ? "active" : ""} onClick={() => onSpeedChange(4)}>
           4x
         </button>
-      </div>
-
-      <div className="command-block">
-        <label htmlFor="difficulty-select">Difficulty</label>
-        <select id="difficulty-select" value={difficulty} onChange={(event) => onDifficultyChange(event.target.value as DifficultyLevel)}>
-          {DIFFICULTIES.map((level) => (
-            <option key={level} value={level}>
-              {level}
-            </option>
-          ))}
-        </select>
       </div>
 
       <div className="runway-summary-row">

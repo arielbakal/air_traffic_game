@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { applyCommand } from "../core/commands";
-import { DEFAULT_ACTIVE_RUNWAYS, DIFFICULTY_CONFIG, resolveRunwayToken } from "../core/constants";
+import { DEFAULT_ACTIVE_RUNWAYS, resolveRunwayToken } from "../core/constants";
 import { updateApproaches } from "../core/approach";
-import { updateAircraftPhysics } from "../core/physics";
+import { updateAircraftPhysicsAtTime } from "../core/physics";
 import { detectConflicts } from "../core/separation";
 import {
   applyHoldingPenalty,
@@ -11,7 +11,7 @@ import {
   updateScoreFromConflicts,
   updateScoreFromEvents,
 } from "../core/scoring";
-import { initialTraffic, nextSpawnInterval, spawnTraffic } from "../core/spawner";
+import { initialMissionScenario } from "../core/spawner";
 import type {
   Aircraft,
   CommandType,
@@ -19,6 +19,8 @@ import type {
   DifficultyLevel,
   GameEvent,
   GameState,
+  MissionFlightState,
+  MissionState,
   ScoreState,
 } from "../core/types";
 
@@ -58,6 +60,123 @@ function createSpawnEvent(time: number, aircraft: Aircraft): GameEvent {
   };
 }
 
+function summarizeMission(flights: MissionFlightState[], previous?: MissionState): MissionState {
+  const completedObjectives = flights.reduce(
+    (sum, flight) => sum + (flight.departureCleared ? 1 : 0) + (flight.approachCleared ? 1 : 0),
+    0,
+  );
+  const completedFlights = flights.filter((flight) => flight.completed).length;
+  const failedFlights = previous?.failedFlights ?? 0;
+  const totalFlights = flights.length;
+  const totalObjectives = totalFlights * 2;
+  const isComplete = completedObjectives >= totalObjectives || completedFlights + failedFlights >= totalFlights;
+  const success = isComplete && failedFlights === 0 && completedObjectives >= totalObjectives;
+
+  return {
+    flights,
+    totalFlights,
+    totalObjectives,
+    completedFlights,
+    completedObjectives,
+    failedFlights,
+    isComplete,
+    success,
+  };
+}
+
+function syncScoreWithMission(score: ScoreState, mission: MissionState): ScoreState {
+  const departures = mission.flights.filter((flight) => flight.departureCleared).length;
+  const arrivals = mission.flights.filter((flight) => flight.approachCleared).length;
+
+  return {
+    ...score,
+    departures,
+    landings: arrivals,
+    flightsHandled: mission.completedFlights,
+  };
+}
+
+function applyMissionObjectives(
+  mission: MissionState,
+  flightId: string,
+  command: CommandType,
+  time: number,
+): { mission: MissionState; bonusScore: number; events: GameEvent[]; missionCompletedNow: boolean } {
+  if (command.type !== "takeoff" && command.type !== "approach") {
+    return { mission, bonusScore: 0, events: [], missionCompletedNow: false };
+  }
+
+  const index = mission.flights.findIndex((flight) => flight.flightId === flightId);
+  if (index < 0) {
+    return { mission, bonusScore: 0, events: [], missionCompletedNow: false };
+  }
+
+  const existing = mission.flights[index];
+  let objectiveGain = 0;
+  let flightCompletionBonus = 0;
+  const events: GameEvent[] = [];
+
+  let updated: MissionFlightState = existing;
+
+  if (command.type === "takeoff" && !existing.departureCleared) {
+    updated = { ...updated, departureCleared: true };
+    objectiveGain += 1;
+    events.push({
+      timestamp: time,
+      type: "info",
+      severity: "info",
+      message: `Mission: ${existing.callsign} departure objective complete`,
+    });
+  }
+
+  if (command.type === "approach" && !existing.approachCleared) {
+    updated = { ...updated, approachCleared: true };
+    objectiveGain += 1;
+    events.push({
+      timestamp: time,
+      type: "info",
+      severity: "info",
+      message: `Mission: ${existing.callsign} arrival objective complete`,
+    });
+  }
+
+  if (!existing.completed && updated.departureCleared && updated.approachCleared) {
+    updated = { ...updated, completed: true };
+    flightCompletionBonus = 1;
+    events.push({
+      timestamp: time,
+      type: "info",
+      severity: "info",
+      message: `Mission: ${existing.callsign} fully completed`,
+    });
+  }
+
+  if (updated === existing) {
+    return { mission, bonusScore: 0, events: [], missionCompletedNow: false };
+  }
+
+  const flights = [...mission.flights];
+  flights[index] = updated;
+  const nextMission = summarizeMission(flights, mission);
+
+  const missionCompletedNow = nextMission.isComplete && !mission.isComplete;
+  if (missionCompletedNow) {
+    events.push({
+      timestamp: time,
+      type: "info",
+      severity: "info",
+      message: nextMission.success ? "Mission complete: all objectives resolved" : "Mission ended",
+    });
+  }
+
+  return {
+    mission: nextMission,
+    bonusScore: objectiveGain * 220 + flightCompletionBonus * 300,
+    events,
+    missionCompletedNow,
+  };
+}
+
 function initialGameState(seed = 20260415): GameState {
   const difficulty: DifficultyLevel = "junior";
   const activeRunways = [...DEFAULT_ACTIVE_RUNWAYS];
@@ -69,12 +188,9 @@ function initialGameState(seed = 20260415): GameState {
     return generated.value;
   };
 
-  const initialAircraft = initialTraffic(
-    DIFFICULTY_CONFIG[difficulty].startCount,
-    activeRunways,
-    0,
-    random,
-  );
+  const missionScenario = initialMissionScenario(activeRunways, 0, random);
+  const mission = summarizeMission(missionScenario.missionFlights);
+  const initialAircraft = missionScenario.aircraft;
 
   return {
     aircraft: toMap(initialAircraft),
@@ -87,7 +203,8 @@ function initialGameState(seed = 20260415): GameState {
     activeRunways,
     events: initialAircraft.map((item) => createSpawnEvent(0, item)).reverse(),
     difficulty,
-    nextSpawnIn: nextSpawnInterval(difficulty, random),
+    nextSpawnIn: Number.POSITIVE_INFINITY,
+    mission,
   };
 }
 
@@ -120,7 +237,7 @@ export const useSimStore = create<SimStore>((set) => ({
   setSpeed: (speed) => set({ speed }),
 
   setDifficulty: (difficulty) => {
-    set({ difficulty, nextSpawnIn: DIFFICULTY_CONFIG[difficulty].spawnMin + 1 });
+    set({ difficulty });
   },
 
   setActiveRunways: (runways) => {
@@ -154,7 +271,7 @@ export const useSimStore = create<SimStore>((set) => ({
         return state;
       }
 
-      const applied = applyCommand(target, command, state.activeRunways);
+      const applied = applyCommand(target, command, state.activeRunways, state.time);
       const aircraft = new Map(state.aircraft);
       aircraft.set(target.id, applied.aircraft);
 
@@ -170,19 +287,40 @@ export const useSimStore = create<SimStore>((set) => ({
       if (applied.result.ok && command.type === "takeoff") {
         events.push({
           timestamp: state.time,
-          type: "takeoff",
+          type: "info",
           severity: "info",
           message: `${target.callsign} departed ${command.runway}`,
         });
       }
 
+      let mission = state.mission;
+      let bonusScore = 0;
+      let missionCompletedNow = false;
+
+      if (applied.result.ok) {
+        const missionStep = applyMissionObjectives(state.mission, target.id, command, state.time);
+        mission = missionStep.mission;
+        bonusScore = missionStep.bonusScore;
+        missionCompletedNow = missionStep.missionCompletedNow;
+        events.push(...missionStep.events);
+      }
+
       const byCallsign = new Map(Array.from(aircraft.values()).map((a) => [a.callsign, a]));
-      const score = updateScoreFromEvents(state.score, events, byCallsign);
+      let score = updateScoreFromEvents(state.score, events, byCallsign);
+      if (bonusScore > 0) {
+        score = {
+          ...score,
+          totalScore: score.totalScore + bonusScore,
+        };
+      }
+      score = syncScoreWithMission(score, mission);
 
       return {
         aircraft,
+        mission,
         score,
         events: pushEvents(state.events, events),
+        paused: missionCompletedNow ? true : state.paused,
       };
     });
   },
@@ -190,14 +328,11 @@ export const useSimStore = create<SimStore>((set) => ({
   tick: (dt) => {
     set((state) => {
       const now = state.time + dt;
-      let seed = state.seed;
-      const random = () => {
-        const generated = seededRandom(seed);
-        seed = generated.nextSeed;
-        return generated.value;
-      };
+      const seed = state.seed;
 
-      let working = Array.from(state.aircraft.values()).map((aircraft) => updateAircraftPhysics(aircraft, dt));
+      let working = Array.from(state.aircraft.values()).map((aircraft) =>
+        updateAircraftPhysicsAtTime(aircraft, dt, now),
+      );
 
       const approachStep = updateApproaches(working, now);
       working = approachStep.aircraftList;
@@ -229,25 +364,19 @@ export const useSimStore = create<SimStore>((set) => ({
         }
       }
 
-      let nextSpawnIn = state.nextSpawnIn - dt;
-      const spawnEvents: GameEvent[] = [];
-      let flightIndex = state.flightIndex;
-
-      while (nextSpawnIn <= 0) {
-        flightIndex += 1;
-        const spawned = spawnTraffic(state.difficulty, state.activeRunways, now, flightIndex, random);
-        working.push(spawned);
-        spawnEvents.push(createSpawnEvent(now, spawned));
-        nextSpawnIn += nextSpawnInterval(state.difficulty, random);
-      }
-
-      const allEvents = [...approachStep.events, ...conflictEvents, ...spawnEvents];
+      const allEvents = [...approachStep.events, ...conflictEvents];
       const byCallsign = new Map(working.map((aircraft) => [aircraft.callsign, aircraft]));
 
       let score: ScoreState = updateScoreFromEvents(state.score, allEvents, byCallsign);
       score = updateScoreFromConflicts(score, conflicts);
       score = applyHoldingPenalty(score, working, dt);
       score = deriveScoreMetrics(score, working);
+      score = syncScoreWithMission(score, state.mission);
+
+      const selectedAircraftId =
+        state.selectedAircraftId && working.some((aircraft) => aircraft.id === state.selectedAircraftId)
+          ? state.selectedAircraftId
+          : null;
 
       return {
         aircraft: toMap(working),
@@ -255,9 +384,9 @@ export const useSimStore = create<SimStore>((set) => ({
         time: now,
         score,
         events: pushEvents(state.events, allEvents),
-        nextSpawnIn,
+        nextSpawnIn: Number.POSITIVE_INFINITY,
         seed,
-        flightIndex,
+        selectedAircraftId,
         seenConflicts,
       };
     });

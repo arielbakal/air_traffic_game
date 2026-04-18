@@ -12,6 +12,11 @@ interface ParseError {
 
 export type ChatParseResult = ParseOk | ParseError;
 
+interface ParseContext {
+  takeoffAirport?: string;
+  approachAirport?: string;
+}
+
 function parseAltitudeValue(token: string): number | null {
   const clean = token.trim().toLowerCase();
   if (!clean) {
@@ -30,10 +35,13 @@ function parseAltitudeValue(token: string): number | null {
   return Number.isFinite(raw) ? raw : null;
 }
 
-function resolveRunway(raw: string, activeRunways: string[]): string | null {
+function resolveRunway(raw: string, activeRunways: string[], preferredAirport?: string): string | null {
   const cleaned = raw.trim().toUpperCase();
   if (!cleaned) {
-    return null;
+    if (!preferredAirport) {
+      return null;
+    }
+    return activeRunways.find((runway) => runway.startsWith(`${preferredAirport}-`)) ?? null;
   }
 
   const exact = activeRunways.find((runway) => runway.toUpperCase() === cleaned);
@@ -41,12 +49,21 @@ function resolveRunway(raw: string, activeRunways: string[]): string | null {
     return exact;
   }
 
-  // Allow shorthand like "11" by matching runway-end suffix in tokens like "SAEZ-11".
+  // Allow shorthand like "13" by matching runway-end suffix in tokens like "SABE-13".
+  const preferredSuffix = preferredAirport
+    ? activeRunways.find(
+        (runway) => runway.startsWith(`${preferredAirport}-`) && runway.toUpperCase().endsWith(`-${cleaned}`),
+      )
+    : null;
+  if (preferredSuffix) {
+    return preferredSuffix;
+  }
+
   const suffix = activeRunways.find((runway) => runway.toUpperCase().endsWith(`-${cleaned}`));
   return suffix ?? null;
 }
 
-export function parseChatCommand(input: string, activeRunways: string[]): ChatParseResult {
+export function parseChatCommand(input: string, activeRunways: string[], context?: ParseContext): ChatParseResult {
   const trimmed = input.trim();
   if (!trimmed) {
     return { ok: false, error: "Enter a command." };
@@ -89,15 +106,17 @@ export function parseChatCommand(input: string, activeRunways: string[]): ChatPa
   }
 
   if (first === "app" || first === "approach" || first === "ils") {
-    const runwayToken = resolveRunway(tokens[tokens.length - 1] ?? "", activeRunways);
+    const runwayHint = tokens[1] ?? "";
+    const runwayToken = resolveRunway(runwayHint, activeRunways, context?.approachAirport);
     if (!runwayToken) {
-      return { ok: false, error: "Approach format: app SAEZ-11 (or app 11)" };
+      return { ok: false, error: "Approach format: app SABE-13 (or app 13)." };
     }
     return { ok: true, command: { type: "approach", runway: runwayToken } };
   }
 
   if (first === "tko" || first === "takeoff") {
-    const runwayToken = resolveRunway(tokens[1] ?? "", activeRunways) ?? activeRunways[0] ?? "";
+    const runwayToken =
+      resolveRunway(tokens[1] ?? "", activeRunways, context?.takeoffAirport) ?? activeRunways[0] ?? "";
     if (!runwayToken) {
       return { ok: false, error: "No active runway available for takeoff." };
     }
@@ -107,6 +126,6 @@ export function parseChatCommand(input: string, activeRunways: string[]): ChatPa
   return {
     ok: false,
     error:
-      "Unknown command. Try: hdg 180, alt 5000, spd 220, app SAEZ-11, hold, ga, takeoff SAEZ-11",
+      "Unknown command. Try: hdg 180, alt 5000, spd 220, app SABE-13, hold, ga, takeoff SABE-13",
   };
 }

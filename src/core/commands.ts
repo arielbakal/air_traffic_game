@@ -1,6 +1,8 @@
 import { normalizeHeading, shortestHeadingDelta } from "./geo";
 import type { Aircraft, CommandResult, CommandType } from "./types";
 
+const MANUAL_ROUTE_OVERRIDE_SECONDS = 40;
+
 function success(message: string): CommandResult {
   return { ok: true, message };
 }
@@ -13,6 +15,7 @@ export function applyCommand(
   aircraft: Aircraft,
   command: CommandType,
   activeRunways: string[],
+  simTime: number,
 ): { aircraft: Aircraft; result: CommandResult } {
   switch (command.type) {
     case "heading": {
@@ -27,6 +30,8 @@ export function applyCommand(
           targetHeading: heading,
           headingChanges: changes,
           status: aircraft.status === "holding" ? "arriving" : aircraft.status,
+          manualRouteIssuedAt: simTime,
+          manualRouteUntil: simTime + MANUAL_ROUTE_OVERRIDE_SECONDS,
         },
         result: success(`${aircraft.callsign} turn heading ${Math.round(heading).toString().padStart(3, "0")}`),
       };
@@ -39,6 +44,8 @@ export function applyCommand(
         aircraft: {
           ...aircraft,
           targetAltitude: Math.round(command.value / 100) * 100,
+          manualRouteIssuedAt: undefined,
+          manualRouteUntil: undefined,
         },
         result: success(`${aircraft.callsign} climb/descend ${Math.round(command.value)} ft`),
       };
@@ -54,6 +61,8 @@ export function applyCommand(
         aircraft: {
           ...aircraft,
           targetSpeed: command.value,
+          manualRouteIssuedAt: undefined,
+          manualRouteUntil: undefined,
         },
         result: success(`${aircraft.callsign} speed ${Math.round(command.value)} kt`),
       };
@@ -62,12 +71,23 @@ export function applyCommand(
       if (!activeRunways.includes(command.runway)) {
         return { aircraft, result: error(`Runway ${command.runway} is not active`) };
       }
+      if (aircraft.status === "taxiing" || aircraft.status === "landed" || aircraft.status === "landing") {
+        return { aircraft, result: error("Approach clearance requires an airborne aircraft") };
+      }
+      if (aircraft.destination && !command.runway.startsWith(`${aircraft.destination}-`)) {
+        return {
+          aircraft,
+          result: error(`Approach runway must belong to destination ${aircraft.destination}`),
+        };
+      }
       return {
         aircraft: {
           ...aircraft,
           commandRunway: command.runway,
           onApproach: false,
           status: "arriving",
+          manualRouteIssuedAt: undefined,
+          manualRouteUntil: undefined,
         },
         result: success(`${aircraft.callsign} cleared ILS approach ${command.runway}`),
       };
@@ -77,6 +97,8 @@ export function applyCommand(
         aircraft: {
           ...aircraft,
           status: "holding",
+          manualRouteIssuedAt: undefined,
+          manualRouteUntil: undefined,
         },
         result: success(`${aircraft.callsign} hold present position`),
       };
@@ -90,6 +112,8 @@ export function applyCommand(
           status: "goAround",
           targetAltitude: 3000,
           targetSpeed: Math.min(220, aircraft.maxSpeed),
+          manualRouteIssuedAt: undefined,
+          manualRouteUntil: undefined,
         },
         result: success(`${aircraft.callsign} go around, climb 3000`),
       };
@@ -97,6 +121,12 @@ export function applyCommand(
     case "takeoff": {
       if (!activeRunways.includes(command.runway)) {
         return { aircraft, result: error(`Runway ${command.runway} is not active`) };
+      }
+      if (!command.runway.startsWith(`${aircraft.origin}-`)) {
+        return {
+          aircraft,
+          result: error(`Takeoff runway must belong to origin ${aircraft.origin}`),
+        };
       }
       if (aircraft.status !== "taxiing") {
         return { aircraft, result: error("Aircraft is not ready for takeoff") };
@@ -108,6 +138,8 @@ export function applyCommand(
           status: "departing",
           targetSpeed: Math.min(250, aircraft.maxSpeed),
           targetAltitude: 5000,
+          manualRouteIssuedAt: undefined,
+          manualRouteUntil: undefined,
         },
         result: success(`${aircraft.callsign} cleared takeoff ${command.runway}`),
       };

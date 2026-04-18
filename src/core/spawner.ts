@@ -1,14 +1,103 @@
-import { AIRPORTS, DIFFICULTY_CONFIG, FLIGHT_TEMPLATES, GATES, PERFORMANCE_BY_CATEGORY } from "./constants";
+import { AIRPORTS, GATES, PERFORMANCE_BY_CATEGORY } from "./constants";
 import { bearingFromTo, haversineNm } from "./geo";
-import type { Aircraft, DifficultyLevel, FlightTemplate, Position } from "./types";
+import type { Aircraft, MissionFlightState, Position } from "./types";
 
-function randomInt(min: number, max: number, random: () => number): number {
-  return Math.floor(random() * (max - min + 1)) + min;
+interface MissionSeedFlight {
+  callsignPrefix: string;
+  flightNumber: string;
+  type: string;
+  category: Aircraft["category"];
+  airline: string;
+  origin: string;
 }
+
+interface MissionScenario {
+  aircraft: Aircraft[];
+  missionFlights: MissionFlightState[];
+}
+
+const FIX_POINTS: Record<string, Position> = {
+  TIGRE: { lat: -34.4, lng: -58.58 },
+  SANPEDRO: { lat: -33.78, lng: -59.65 },
+  PARANA: { lat: -32.45, lng: -60.3 },
+  COLONIA: { lat: -34.48, lng: -57.85 },
+  GUALEGUAY: { lat: -33.2, lng: -59.26 },
+  LA_PLATA: { lat: -34.93, lng: -57.95 },
+  PINAMAR: { lat: -37.11, lng: -56.86 },
+  DOLORES: { lat: -36.32, lng: -57.68 },
+  AZUL: { lat: -36.75, lng: -59.86 },
+  ATLANTIC_W: { lat: -35.1, lng: -57.45 },
+  RIO_W: { lat: -34.66, lng: -57.7 },
+  RIO_E: { lat: -34.74, lng: -56.84 },
+};
+
+const DIRECT_ROUTE_FIXES: Record<string, string[]> = {
+  "SABE-SUMU": ["RIO_W", "RIO_E"],
+  "SABE-SAAR": ["TIGRE", "SANPEDRO", "PARANA"],
+  "SABE-SAZM": ["LA_PLATA", "DOLORES", "PINAMAR"],
+  "SUMU-SAAR": ["COLONIA", "GUALEGUAY", "PARANA"],
+  "SUMU-SAZM": ["RIO_E", "ATLANTIC_W", "PINAMAR"],
+  "SAAR-SAZM": ["SANPEDRO", "AZUL", "DOLORES"],
+};
+
+const MISSION_SEED_FLIGHTS: MissionSeedFlight[] = [
+  {
+    callsignPrefix: "AR",
+    flightNumber: "1901",
+    type: "B738",
+    category: "medium",
+    airline: "Aerolineas Argentinas",
+    origin: "SABE",
+  },
+  {
+    callsignPrefix: "UY",
+    flightNumber: "2102",
+    type: "E190",
+    category: "medium",
+    airline: "Amaszonas Uruguay",
+    origin: "SUMU",
+  },
+  {
+    callsignPrefix: "LA",
+    flightNumber: "4303",
+    type: "A320",
+    category: "medium",
+    airline: "LATAM",
+    origin: "SAAR",
+  },
+  {
+    callsignPrefix: "FO",
+    flightNumber: "7604",
+    type: "B738",
+    category: "medium",
+    airline: "Flybondi",
+    origin: "SAZM",
+  },
+];
+
+const AIRPORT_ORDER = MISSION_SEED_FLIGHTS.map((item) => item.origin);
+
+const DEPARTURE_GATES: Record<string, string> = {
+  SABE: "NORTH",
+  SUMU: "EAST",
+  SAAR: "NORTHWEST",
+  SAZM: "SOUTH",
+};
+
+const ARRIVAL_GATES: Record<string, string> = {
+  SABE: "NORTHEAST",
+  SUMU: "EAST",
+  SAAR: "WEST",
+  SAZM: "SOUTHEAST",
+};
 
 function getNodePosition(nodeId: string): Position {
   if (AIRPORTS[nodeId]) {
     return AIRPORTS[nodeId].position;
+  }
+
+  if (FIX_POINTS[nodeId]) {
+    return FIX_POINTS[nodeId];
   }
 
   const gate = GATES.find((item) => item.id === nodeId);
@@ -33,22 +122,10 @@ function runwayForAirport(airportIcao: string, activeRunways: string[]): string 
   return fallback ? `${airportIcao}-${fallback}` : null;
 }
 
-function chooseTemplate(random: () => number, arrivalsWeight = 0.7): FlightTemplate {
-  const arrivals = FLIGHT_TEMPLATES.filter((template) => template.kind === "arrival");
-  const departures = FLIGHT_TEMPLATES.filter((template) => template.kind === "departure");
-
-  const pool = random() < arrivalsWeight ? arrivals : departures;
-  const totalWeight = pool.reduce((sum, template) => sum + template.weight, 0);
-  let roll = random() * totalWeight;
-
-  for (const template of pool) {
-    roll -= template.weight;
-    if (roll <= 0) {
-      return template;
-    }
-  }
-
-  return pool[pool.length - 1];
+function pickDestination(origin: string, random: () => number): string {
+  const candidates = AIRPORT_ORDER.filter((icao) => icao !== origin);
+  const index = Math.floor(random() * candidates.length);
+  return candidates[index] ?? candidates[0];
 }
 
 function createSquawk(index: number): string {
@@ -56,36 +133,50 @@ function createSquawk(index: number): string {
   return base.toString().padStart(4, "0");
 }
 
-function spawnFromTemplate(
-  template: FlightTemplate,
+function corridorFixes(origin: string, destination: string): string[] {
+  const directKey = `${origin}-${destination}`;
+  if (DIRECT_ROUTE_FIXES[directKey]) {
+    return DIRECT_ROUTE_FIXES[directKey];
+  }
+
+  const reverseKey = `${destination}-${origin}`;
+  if (DIRECT_ROUTE_FIXES[reverseKey]) {
+    return [...DIRECT_ROUTE_FIXES[reverseKey]].reverse();
+  }
+
+  return [DEPARTURE_GATES[origin] ?? "NORTH", ARRIVAL_GATES[destination] ?? "SOUTH"];
+}
+
+function createRouteWaypoints(origin: string, destination: string): Position[] {
+  const routeNodes = [origin, ...corridorFixes(origin, destination), destination];
+
+  const deduped: string[] = [];
+  for (const node of routeNodes) {
+    if (deduped[deduped.length - 1] !== node) {
+      deduped.push(node);
+    }
+  }
+
+  return deduped.map((node) => getNodePosition(node));
+}
+
+function spawnMissionFlight(
+  template: MissionSeedFlight,
+  destination: string,
   index: number,
   activeRunways: string[],
   time: number,
-  random: () => number,
 ): Aircraft {
-  const originPos = getNodePosition(template.origin);
-  const destinationPos = getNodePosition(template.destination);
-  const heading = bearingFromTo(originPos, destinationPos);
+  const originPos = AIRPORTS[template.origin]?.position ?? getNodePosition(template.origin);
+  const destinationPos = AIRPORTS[destination]?.position ?? getNodePosition(destination);
+  const routeWaypoints = createRouteWaypoints(template.origin, destination);
+  const routeWaypointIndex = Math.min(1, routeWaypoints.length - 1);
+  const nextWaypoint = routeWaypoints[routeWaypointIndex] ?? destinationPos;
+  const routeHeading = bearingFromTo(originPos, nextWaypoint);
 
   const perf = PERFORMANCE_BY_CATEGORY[template.category];
-  const isArrival = template.kind === "arrival";
-  const isDepartureFromAirport = Boolean(AIRPORTS[template.origin]);
-
-  const initialAltitude = isArrival
-    ? randomInt(7000, 18000, random)
-    : AIRPORTS[template.origin]
-      ? AIRPORTS[template.origin].elevation
-      : randomInt(3000, 9000, random);
-
-  const initialSpeed = isArrival ? randomInt(220, 320, random) : isDepartureFromAirport ? 0 : randomInt(160, 230, random);
-
-  const assignedRunway = isArrival
-    ? AIRPORTS[template.destination]
-      ? runwayForAirport(template.destination, activeRunways)
-      : null
-    : AIRPORTS[template.origin]
-      ? runwayForAirport(template.origin, activeRunways)
-      : null;
+  const assignedRunway = runwayForAirport(template.origin, activeRunways);
+  const departureHeading = assignedRunway ? Number(assignedRunway.split("-")[1]) * 10 : routeHeading;
 
   return {
     id: `${template.callsignPrefix}${template.flightNumber}-${createSquawk(index)}`,
@@ -94,16 +185,16 @@ function spawnFromTemplate(
     category: template.category,
     airline: template.airline,
     position: originPos,
-    altitude: initialAltitude,
-    heading: isDepartureFromAirport && assignedRunway ? Number(assignedRunway.split("-")[1]) * 10 : heading,
-    speed: initialSpeed,
+    altitude: AIRPORTS[template.origin]?.elevation ?? 0,
+    heading: departureHeading,
+    speed: 0,
     verticalSpeed: 0,
-    targetAltitude: isArrival ? 5000 : isDepartureFromAirport ? 5000 : initialAltitude,
-    targetHeading: heading,
-    targetSpeed: isArrival ? initialSpeed : Math.min(250, perf.maxSpeed),
+    targetAltitude: 6000,
+    targetHeading: routeHeading,
+    targetSpeed: Math.min(250, perf.maxSpeed),
     origin: template.origin,
-    destination: template.destination,
-    status: isArrival ? "arriving" : isDepartureFromAirport ? "taxiing" : "enroute",
+    destination,
+    status: "taxiing",
     assignedRunway,
     maxSpeed: perf.maxSpeed,
     minSpeed: perf.minSpeed,
@@ -120,40 +211,35 @@ function spawnFromTemplate(
     routeDistanceNm: 0,
     directDistanceNm: haversineNm(originPos, destinationPos),
     holdTime: 0,
+    routeWaypoints,
+    routeWaypointIndex,
   };
 }
 
-export function initialTraffic(
-  count: number,
+export function initialMissionScenario(
   activeRunways: string[],
   time: number,
   random: () => number,
-): Aircraft[] {
-  const items: Aircraft[] = [];
-  for (let i = 0; i < count; i += 1) {
-    const template = chooseTemplate(random, 0.7);
-    items.push(spawnFromTemplate(template, i + 1, activeRunways, time, random));
-  }
-  return items;
-}
+): MissionScenario {
+  const aircraft: Aircraft[] = [];
+  const missionFlights: MissionFlightState[] = [];
 
-export function spawnTraffic(
-  difficulty: DifficultyLevel,
-  activeRunways: string[],
-  time: number,
-  index: number,
-  random: () => number,
-): Aircraft {
-  const arrivalBias = difficulty === "student" ? 0.75 : difficulty === "chief" ? 0.65 : 0.7;
-  const template = chooseTemplate(random, arrivalBias);
-  return spawnFromTemplate(template, index, activeRunways, time, random);
-}
+  for (let index = 0; index < MISSION_SEED_FLIGHTS.length; index += 1) {
+    const template = MISSION_SEED_FLIGHTS[index];
+    const destination = pickDestination(template.origin, random);
+    const flight = spawnMissionFlight(template, destination, index + 1, activeRunways, time);
 
-export function nextSpawnInterval(difficulty: DifficultyLevel, random: () => number): number {
-  const config = DIFFICULTY_CONFIG[difficulty];
-  const burst = random() > 0.82;
-  if (burst) {
-    return randomInt(15, 35, random);
+    aircraft.push(flight);
+    missionFlights.push({
+      flightId: flight.id,
+      callsign: flight.callsign,
+      origin: template.origin,
+      destination,
+      departureCleared: false,
+      approachCleared: false,
+      completed: false,
+    });
   }
-  return randomInt(config.spawnMin, config.spawnMax, random);
+
+  return { aircraft, missionFlights };
 }

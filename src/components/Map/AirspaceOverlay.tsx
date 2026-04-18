@@ -16,7 +16,7 @@ export function AirspaceOverlay() {
         }}
       >
         <Tooltip direction="center" permanent className="tma-tooltip">
-          BAIRES TMA 50NM / FL245
+          REGIONAL TMA {Math.round(TMA.radius)}NM / FL{Math.round(TMA.ceiling / 100)}
         </Tooltip>
       </Circle>
 
