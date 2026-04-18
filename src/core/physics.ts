@@ -11,10 +11,11 @@ function nearestRouteIndex(aircraft: Aircraft, fromIndex: number): number {
   let bestIndex = fromIndex;
   let bestDistance = Number.POSITIVE_INFINITY;
 
-  for (let i = fromIndex; i < aircraft.routeWaypoints.length; i += 1) {
+  for (let i = 0; i < aircraft.routeWaypoints.length; i += 1) {
     const distance = haversineNm(aircraft.position, aircraft.routeWaypoints[i]);
-    if (distance < bestDistance) {
-      bestDistance = distance;
+    const biased = i < fromIndex ? distance + 5 : distance;
+    if (biased < bestDistance) {
+      bestDistance = biased;
       bestIndex = i;
     }
   }
