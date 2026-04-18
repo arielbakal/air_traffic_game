@@ -619,7 +619,7 @@ button:disabled {
 .ops-metrics-grid {
   margin-top: 0.3rem;
   display: grid;
-  grid-template-columns: auto auto auto auto auto auto auto auto auto auto;
+  grid-template-columns: auto 1fr auto 1fr;
   gap: 0.2rem 0.45rem;
   font-size: 0.68rem;
 }
@@ -723,6 +723,6 @@ button:disabled {
   }
 
   .ops-metrics-grid {
-    grid-template-columns: auto auto auto auto;
+    grid-template-columns: auto 1fr;
   }
 }
