@@ -42,7 +42,7 @@ function App() {
     <div className="app-shell">
       <main className="main-layout">
         <section className="map-pane">
-          <SimMap aircraft={aircraft} conflicts={conflicts} onSelectAircraft={selectAircraft} />
+          <SimMap aircraft={aircraft} conflicts={conflicts} activeRunways={activeRunways} onSelectAircraft={selectAircraft} />
           <SimDock
             paused={paused}
             speed={speed}

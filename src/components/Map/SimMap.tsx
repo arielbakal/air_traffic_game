@@ -11,6 +11,7 @@ import { SelectedRouteOverlay } from "./SelectedRouteOverlay";
 interface SimMapProps {
   aircraft: Aircraft[];
   conflicts: ConflictPair[];
+  activeRunways: string[];
   onSelectAircraft: (id: string | null) => void;
 }
 
@@ -35,7 +36,7 @@ function maxSeverity(
   return rank[next] > rank[current] ? next : current;
 }
 
-export function SimMap({ aircraft, conflicts, onSelectAircraft }: SimMapProps) {
+export function SimMap({ aircraft, conflicts, activeRunways, onSelectAircraft }: SimMapProps) {
   const severityByCallsign = useMemo(() => {
     const result = new Map<string, "none" | "warning" | "critical" | "collision">();
 
@@ -73,7 +74,7 @@ export function SimMap({ aircraft, conflicts, onSelectAircraft }: SimMapProps) {
       />
 
       <AirspaceOverlay />
-      <RunwayOverlay />
+      <RunwayOverlay activeRunways={activeRunways} />
       <ConflictAlert conflicts={conflicts} aircraft={aircraft} />
       <SelectedRouteOverlay aircraft={selectedAircraft} />
 
