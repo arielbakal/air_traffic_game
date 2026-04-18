@@ -133,15 +133,20 @@ function createSocketIO(url: string) {
       ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
-        connected = true;
-        trigger("connect", undefined);
-        pendingEmits.forEach(({ event, data }) => emit(event, data));
-        pendingEmits.length = 0;
+        ws!.send("40"); // Socket.IO EIO4 connect packet
       };
 
       ws.onmessage = (evt) => {
         const raw = evt.data as string;
+        if (raw.startsWith("0")) return;  // EIO open, ignore
         if (raw === "2") { ws!.send("3"); return; } // ping/pong
+        if (raw.startsWith("40")) {       // Socket.IO connect ACK
+          connected = true;
+          trigger("connect", undefined);
+          pendingEmits.forEach(({ event, data }) => emit(event, data));
+          pendingEmits.length = 0;
+          return;
+        }
         if (!raw.startsWith("42")) return;
         try {
           const [event, data] = JSON.parse(raw.slice(2)) as [string, unknown];

@@ -21,6 +21,7 @@ async function callOllamaRaw(
 ): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
   const body = {
     model: MODEL,
+    think: false,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userMessage },
@@ -34,7 +35,7 @@ async function callOllamaRaw(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(300_000),
   });
 
   if (!res.ok) {

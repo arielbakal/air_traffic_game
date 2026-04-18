@@ -10,7 +10,7 @@ export const ATCCommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("hold"), ...BaseCommand }),
   z.object({ type: z.literal("goAround"), ...BaseCommand }),
   z.object({ type: z.literal("takeoff"), ...BaseCommand, runway: z.string() }),
-  z.object({ type: z.literal("noop"), reasoning: z.string() }),
+  z.object({ type: z.literal("noop"), reasoning: z.string(), callsign: z.string().optional() }),
 ]);
 
 export const ATCResponseSchema = z.object({
@@ -37,7 +37,7 @@ export const ATC_JSON_SCHEMA = {
           runway: { type: "string" },
           reasoning: { type: "string" },
         },
-        required: ["type", "reasoning"],
+        required: ["type", "callsign", "runway", "value", "reasoning"],
       },
     },
   },
