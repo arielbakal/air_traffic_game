@@ -18,7 +18,7 @@ export function useGameLoop(): void {
     lastTime.current = performance.now();
 
     const loop = (now: number) => {
-      const delta = (now - lastTime.current) / 1000;
+      const delta = Math.min((now - lastTime.current) / 1000, 0.25);
       lastTime.current = now;
 
       if (!paused && !missionComplete) {
