@@ -20,7 +20,6 @@ function App() {
   const score = useSimStore((state) => state.score);
   const simTime = useSimStore((state) => state.time);
   const mission = useSimStore((state) => state.mission);
-  const wind = useSimStore((state) => state.wind);
   const activeRunways = useSimStore((state) => state.activeRunways);
   const selectedAircraftId = useSimStore((state) => state.selectedAircraftId);
   const paused = useSimStore((state) => state.paused);
@@ -56,7 +55,7 @@ function App() {
         </section>
 
         <aside className="sidebar-pane">
-          <StatusBar simTime={simTime} wind={wind} activeRunways={activeRunways} mission={mission} />
+          <StatusBar simTime={simTime} activeRunways={activeRunways} mission={mission} />
           <CommandChatPanel
             aircraft={selectedAircraft}
             activeRunways={activeRunways}
