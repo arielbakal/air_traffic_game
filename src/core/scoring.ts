@@ -20,7 +20,7 @@ export function createInitialScore(): ScoreState {
     goArounds: 0,
     flightsHandled: 0,
     averageDelay: 0,
-    efficiency: 100,
+    efficiency: null,
   };
 }
 
@@ -80,11 +80,17 @@ export function applyHoldingPenalty(score: ScoreState, aircraftList: Aircraft[],
 
 export function deriveScoreMetrics(score: ScoreState, aircraftList: Aircraft[]): ScoreState {
   const totalDelay = aircraftList.reduce((sum, a) => sum + a.holdTime, 0);
-  const routeActual = aircraftList.reduce((sum, a) => sum + Math.max(a.routeDistanceNm, 0.1), 0);
-  const routeDirect = aircraftList.reduce((sum, a) => sum + Math.max(a.directDistanceNm, 0.1), 0);
-
-  const efficiency = Math.max(0, Math.min(100, safeDiv(routeDirect, routeActual) * 100));
   const averageDelay = safeDiv(totalDelay, Math.max(aircraftList.length, 1));
+
+  const completed = aircraftList.filter(
+    (a) => a.status === "landed" || a.status === "taxiing" || a.status === "enroute",
+  );
+  let efficiency: number | null = null;
+  if (completed.length > 0) {
+    const routeActual = completed.reduce((sum, a) => sum + Math.max(a.routeDistanceNm, 0.1), 0);
+    const routeDirect = completed.reduce((sum, a) => sum + Math.max(a.directDistanceNm, 0.1), 0);
+    efficiency = Math.max(0, Math.min(100, safeDiv(routeDirect, routeActual) * 100));
+  }
 
   return {
     ...score,

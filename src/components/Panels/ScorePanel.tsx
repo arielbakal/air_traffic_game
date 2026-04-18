@@ -25,7 +25,7 @@ export function ScorePanel({ score }: ScorePanelProps) {
         <span>Avg delay</span>
         <span>{Math.round(score.averageDelay)}s</span>
         <span>Efficiency</span>
-        <span>{Math.round(score.efficiency)}%</span>
+        <span>{score.efficiency !== null ? `${Math.round(score.efficiency)}%` : "—"}</span>
       </div>
     </div>
   );

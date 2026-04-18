@@ -21,7 +21,7 @@ export function OperationsPanel({ score, mission, aircraft, selectedAircraftId, 
         <span className="ops-pill">
           Flights {mission.completedFlights}/{mission.totalFlights}
         </span>
-        <span className="ops-pill">{Math.round(score.efficiency)}% eff</span>
+        <span className="ops-pill">{score.efficiency !== null ? `${Math.round(score.efficiency)}% eff` : "— eff"}</span>
         <span className="ops-pill warn">{score.separationViolations} vio</span>
       </div>
 

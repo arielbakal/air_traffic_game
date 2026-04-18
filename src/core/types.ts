@@ -129,7 +129,7 @@ export interface ScoreState {
   goArounds: number;
   flightsHandled: number;
   averageDelay: number;
-  efficiency: number;
+  efficiency: number | null;
 }
 
 export interface MissionFlightState {
