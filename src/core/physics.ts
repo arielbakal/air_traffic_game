@@ -38,7 +38,7 @@ export function updateAircraftPhysicsAtTime(aircraft: Aircraft, dt: number, simT
 
   const manualRouteActive =
     typeof aircraft.manualRouteUntil === "number" && simTime < aircraft.manualRouteUntil;
-  const routeGuidanceEnabled = routeCanGuide;
+  const routeGuidanceEnabled = routeCanGuide && !manualRouteActive;
 
   if (routeGuidanceEnabled && aircraft.routeWaypoints.length > 0) {
     nextWaypointIndex = nearestRouteIndex(aircraft, nextWaypointIndex);
@@ -59,17 +59,7 @@ export function updateAircraftPhysicsAtTime(aircraft: Aircraft, dt: number, simT
   }
 
   if (routeHeading !== null) {
-    if (manualRouteActive && typeof aircraft.manualRouteIssuedAt === "number" && typeof aircraft.manualRouteUntil === "number") {
-      const manualHeading = aircraft.targetHeading;
-      const totalWindow = Math.max(1, aircraft.manualRouteUntil - aircraft.manualRouteIssuedAt);
-      const elapsed = Math.max(0, simTime - aircraft.manualRouteIssuedAt);
-      const progress = clamp(elapsed / totalWindow, 0, 1);
-      const routeWeight = 0.18 + progress * 0.82;
-      const blendedDelta = shortestHeadingDelta(manualHeading, routeHeading) * routeWeight;
-      nextTargetHeading = normalizeHeading(manualHeading + blendedDelta);
-    } else {
-      nextTargetHeading = routeHeading;
-    }
+    nextTargetHeading = routeHeading;
   }
 
   let heading = aircraft.heading;

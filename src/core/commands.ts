@@ -1,7 +1,7 @@
 import { normalizeHeading, shortestHeadingDelta } from "./geo";
 import type { Aircraft, CommandResult, CommandType } from "./types";
 
-const MANUAL_ROUTE_OVERRIDE_SECONDS = 40;
+const MANUAL_ROUTE_OVERRIDE_SECONDS = 90;
 
 function success(message: string): CommandResult {
   return { ok: true, message };
