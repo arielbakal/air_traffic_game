@@ -128,7 +128,8 @@ function createSocketIO(url: string) {
 
   function connect() {
     try {
-      const wsUrl = url.replace("http://", "ws://").replace("https://", "wss://") + "/socket.io/?EIO=4&transport=websocket";
+      const origin = url || window.location.origin;
+      const wsUrl = origin.replace("http://", "ws://").replace("https://", "wss://") + "/socket.io/?EIO=4&transport=websocket";
       ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
