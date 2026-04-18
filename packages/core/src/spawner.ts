@@ -243,5 +243,43 @@ export function initialMissionScenario(
     });
   }
 
+  // Conflict scenario: AR1901 has deviated from its cleared route and is flying
+  // east at 8000ft directly toward UY2102 inbound from SUMU at the same altitude.
+  if (aircraft.length >= 2) {
+    aircraft[0] = {
+      ...aircraft[0],
+      status: "enroute",
+      position: { lat: -34.65, lng: -57.45 },
+      altitude: 8000,
+      targetAltitude: 8000,
+      heading: 92,
+      targetHeading: 92,
+      speed: 250,
+      targetSpeed: 250,
+      verticalSpeed: 0,
+      assignedRunway: null,
+      // Single far-east waypoint keeps route guidance pointed east indefinitely
+      routeWaypoints: [{ lat: -34.65, lng: -53.0 }],
+      routeWaypointIndex: 0,
+    };
+
+    aircraft[1] = {
+      ...aircraft[1],
+      status: "enroute",
+      position: { lat: -34.65, lng: -57.12 },
+      altitude: 8000,
+      targetAltitude: 8000,
+      heading: 272,
+      targetHeading: 272,
+      speed: 250,
+      targetSpeed: 250,
+      verticalSpeed: 0,
+      assignedRunway: null,
+      // Single far-west waypoint keeps route guidance pointed west
+      routeWaypoints: [{ lat: -34.65, lng: -61.0 }],
+      routeWaypointIndex: 0,
+    };
+  }
+
   return { aircraft, missionFlights };
 }
