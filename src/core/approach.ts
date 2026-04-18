@@ -46,6 +46,21 @@ export function updateApproaches(
           severity: "info",
           message: `${aircraft.callsign} captured ILS ${runway.runwayId}`,
         });
+      } else if (
+        aircraft.commandRunway &&
+        !aircraft.approachAltWarnGiven &&
+        distanceNm <= 18 &&
+        headingError <= 30 &&
+        altitudeDelta > 1800
+      ) {
+        const maxAlt = Math.round(targetAlt + 1800);
+        events.push({
+          timestamp: time,
+          type: "info",
+          severity: "warning",
+          message: `${aircraft.callsign} too high for ILS ${runway.runwayId} — descend below ${maxAlt}ft`,
+        });
+        next = { ...next, approachAltWarnGiven: true };
       }
     }
 

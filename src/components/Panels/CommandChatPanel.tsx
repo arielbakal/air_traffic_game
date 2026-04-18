@@ -54,6 +54,9 @@ export function CommandChatPanel({ aircraft, activeRunways, onIssueCommand }: Co
 
     onIssueCommand(parsed.command);
     appendMessage("system", `Sent to ${aircraft.callsign}`);
+    if (parsed.command.type === "approach") {
+      appendMessage("system", "Tip: aircraft must be below ~7500ft within 18nm for ILS capture.");
+    }
     setInput("");
   };
 

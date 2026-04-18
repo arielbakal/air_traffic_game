@@ -99,6 +99,7 @@ export interface Aircraft {
   manualRouteUntil?: number;
   manualRouteIssuedAt?: number;
   removeAt?: number;
+  approachAltWarnGiven?: boolean;
 }
 
 export type CommandType =

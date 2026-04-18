@@ -88,6 +88,7 @@ export function applyCommand(
           status: "arriving",
           manualRouteIssuedAt: undefined,
           manualRouteUntil: undefined,
+          approachAltWarnGiven: false,
         },
         result: success(`${aircraft.callsign} cleared ILS approach ${command.runway}`),
       };
