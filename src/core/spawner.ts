@@ -1,4 +1,4 @@
-import { AIRPORTS, GATES, PERFORMANCE_BY_CATEGORY } from "./constants";
+import { AIRPORTS, GATES, PERFORMANCE_BY_CATEGORY, resolveRunwayToken } from "./constants";
 import { bearingFromTo, haversineNm } from "./geo";
 import type { Aircraft, MissionFlightState, Position } from "./types";
 
@@ -176,7 +176,7 @@ function spawnMissionFlight(
 
   const perf = PERFORMANCE_BY_CATEGORY[template.category];
   const assignedRunway = runwayForAirport(template.origin, activeRunways);
-  const departureHeading = assignedRunway ? Number(assignedRunway.split("-")[1]) * 10 : routeHeading;
+  const departureHeading = (assignedRunway ? resolveRunwayToken(assignedRunway)?.heading : undefined) ?? routeHeading;
 
   return {
     id: `${template.callsignPrefix}${template.flightNumber}-${createSquawk(index)}`,
