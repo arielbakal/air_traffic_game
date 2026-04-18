@@ -26,7 +26,7 @@ export function EventLog({ events }: EventLogProps) {
       <h3>Event Log ({events.length})</h3>
       <div className="event-list">
         {visibleEvents.map((event, index) => (
-          <div key={`${event.timestamp}-${index}`} className={`event-item ${event.severity}`}>
+          <div key={`${event.timestamp}-${event.type}-${event.message.slice(0, 16)}`} className={`event-item ${event.severity}`}>
             <span className="event-time">[{formatEventTime(event.timestamp)}]</span>
             <span>{event.message}</span>
           </div>
