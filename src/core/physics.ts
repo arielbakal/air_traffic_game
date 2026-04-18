@@ -64,10 +64,24 @@ export function updateAircraftPhysicsAtTime(aircraft: Aircraft, dt: number, simT
   }
 
   let heading = aircraft.heading;
+  let holdLeg = aircraft.holdLeg ?? "outbound";
+  let holdLegTimer = aircraft.holdLegTimer ?? 0;
+  let holdFixHeading = aircraft.holdFixHeading ?? aircraft.heading;
 
   if (aircraft.status === "holding") {
-    heading = normalizeHeading(heading + aircraft.turnRate * dt);
+    holdLegTimer += dt;
+    if (holdLegTimer >= 60) {
+      holdLeg = holdLeg === "outbound" ? "inbound" : "outbound";
+      holdLegTimer = 0;
+    }
+    const legHeading = holdLeg === "inbound" ? holdFixHeading : normalizeHeading(holdFixHeading + 180);
+    const delta = shortestHeadingDelta(heading, legHeading);
+    const turn = clamp(delta, -aircraft.turnRate * dt, aircraft.turnRate * dt);
+    heading = normalizeHeading(heading + turn);
   } else {
+    holdLeg = "outbound";
+    holdLegTimer = 0;
+    holdFixHeading = aircraft.heading;
     const delta = shortestHeadingDelta(heading, nextTargetHeading);
     const turn = clamp(delta, -aircraft.turnRate * dt, aircraft.turnRate * dt);
     heading = normalizeHeading(heading + turn);
@@ -112,6 +126,9 @@ export function updateAircraftPhysicsAtTime(aircraft: Aircraft, dt: number, simT
     manualRouteIssuedAt: manualRouteActive ? aircraft.manualRouteIssuedAt : undefined,
     routeDistanceNm: aircraft.routeDistanceNm + distNm,
     holdTime: aircraft.status === "holding" ? aircraft.holdTime + dt : aircraft.holdTime,
+    holdLeg: aircraft.status === "holding" ? holdLeg : undefined,
+    holdLegTimer: aircraft.status === "holding" ? holdLegTimer : undefined,
+    holdFixHeading: aircraft.status === "holding" ? holdFixHeading : undefined,
   };
 }
 

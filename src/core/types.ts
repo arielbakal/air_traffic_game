@@ -100,6 +100,9 @@ export interface Aircraft {
   manualRouteIssuedAt?: number;
   removeAt?: number;
   approachAltWarnGiven?: boolean;
+  holdLeg?: "inbound" | "outbound";
+  holdLegTimer?: number;
+  holdFixHeading?: number;
 }
 
 export type CommandType =

@@ -100,6 +100,9 @@ export function applyCommand(
           status: "holding",
           manualRouteIssuedAt: undefined,
           manualRouteUntil: undefined,
+          holdFixHeading: aircraft.heading,
+          holdLeg: "outbound" as const,
+          holdLegTimer: 0,
         },
         result: success(`${aircraft.callsign} hold present position`),
       };
