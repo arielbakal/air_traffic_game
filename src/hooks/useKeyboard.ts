@@ -14,7 +14,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return target.isContentEditable || target.closest("[contenteditable='true']") !== null;
 }
 
-export function useKeyboard(): void {
+export function useKeyboard(onDebugToggle?: () => void): void {
   const paused = useSimStore((state) => state.paused);
   const setPaused = useSimStore((state) => state.setPaused);
   const setSpeed = useSimStore((state) => state.setSpeed);
@@ -28,6 +28,11 @@ export function useKeyboard(): void {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (isTypingTarget(event.target)) {
+        return;
+      }
+
+      if (event.key === "`") {
+        onDebugToggle?.();
         return;
       }
 
@@ -55,5 +60,5 @@ export function useKeyboard(): void {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectAircraft, setPaused, setSpeed]);
+  }, [onDebugToggle, selectAircraft, setPaused, setSpeed]);
 }

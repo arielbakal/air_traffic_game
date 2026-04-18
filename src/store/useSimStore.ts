@@ -207,11 +207,18 @@ function initialGameState(seed = 20260415, difficulty: DifficultyLevel = "junior
   };
 }
 
+export interface DebugCommandEntry {
+  time: number;
+  callsign: string;
+  command: CommandType;
+}
+
 export interface SimStore extends GameState {
   selectedAircraftId: string | null;
   seed: number;
   flightIndex: number;
   seenConflicts: Set<string>;
+  debugCommands: DebugCommandEntry[];
   setPaused: (paused: boolean) => void;
   setSpeed: (speed: 1 | 2 | 4) => void;
   setDifficulty: (difficulty: DifficultyLevel) => void;
@@ -220,6 +227,7 @@ export interface SimStore extends GameState {
   issueCommand: (command: CommandType) => void;
   tick: (dt: number) => void;
   restart: () => void;
+  loadScenario: (aircraft: Aircraft[]) => void;
 }
 
 const base = initialGameState();
@@ -230,6 +238,7 @@ export const useSimStore = create<SimStore>((set) => ({
   seed: 20260415,
   flightIndex: base.aircraft.size,
   seenConflicts: new Set<string>(),
+  debugCommands: [],
 
   setPaused: (paused) => set({ paused }),
 
@@ -314,12 +323,16 @@ export const useSimStore = create<SimStore>((set) => ({
       }
       score = syncScoreWithMission(score, mission);
 
+      const debugEntry: DebugCommandEntry = { time: state.time, callsign: target.callsign, command };
+      const debugCommands = [debugEntry, ...state.debugCommands].slice(0, 10);
+
       return {
         aircraft,
         mission,
         score,
         events: pushEvents(state.events, events),
         paused: missionCompletedNow ? true : state.paused,
+        debugCommands,
       };
     });
   },
@@ -417,6 +430,24 @@ export const useSimStore = create<SimStore>((set) => ({
         seed: 20260415,
         flightIndex: resetState.aircraft.size,
         seenConflicts: new Set<string>(),
+        debugCommands: [],
+      };
+    });
+  },
+
+  loadScenario: (aircraftList) => {
+    set((state) => {
+      const resetState = initialGameState(20260415, state.difficulty);
+      const spawnEvents = aircraftList.map((a) => createSpawnEvent(0, a));
+      return {
+        ...resetState,
+        aircraft: toMap(aircraftList),
+        events: spawnEvents.reverse(),
+        selectedAircraftId: null,
+        seed: 20260415,
+        flightIndex: aircraftList.length,
+        seenConflicts: new Set<string>(),
+        debugCommands: [],
       };
     });
   },

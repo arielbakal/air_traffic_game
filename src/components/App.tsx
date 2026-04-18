@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useGameLoop } from "../hooks/useGameLoop";
 import { useKeyboard } from "../hooks/useKeyboard";
 import { useSimStore } from "../store/useSimStore";
+import { DebugOverlay } from "./Debug/DebugOverlay";
 import { EventLog } from "./HUD/EventLog";
 import { MissionResultOverlay } from "./HUD/MissionResultOverlay";
 import { SimDock } from "./HUD/SimDock";
@@ -11,8 +12,9 @@ import { CommandChatPanel } from "./Panels/CommandChatPanel";
 import { OperationsPanel } from "./Panels/OperationsPanel";
 
 function App() {
+  const [debugVisible, setDebugVisible] = useState(false);
   useGameLoop();
-  useKeyboard();
+  useKeyboard(() => setDebugVisible((v) => !v));
 
   const aircraftMap = useSimStore((state) => state.aircraft);
   const conflicts = useSimStore((state) => state.conflicts);
@@ -30,6 +32,7 @@ function App() {
   const setPaused = useSimStore((state) => state.setPaused);
   const setSpeed = useSimStore((state) => state.setSpeed);
   const restart = useSimStore((state) => state.restart);
+  const loadScenario = useSimStore((state) => state.loadScenario);
   const setActiveRunways = useSimStore((state) => state.setActiveRunways);
 
   const aircraft = useMemo(() => {
@@ -51,6 +54,7 @@ function App() {
             onSpeedChange={setSpeed}
             onRestart={restart}
             onActiveRunwaysChange={setActiveRunways}
+            onLoadScenario={loadScenario}
           />
         </section>
 
@@ -73,6 +77,7 @@ function App() {
       </main>
 
       <MissionResultOverlay mission={mission} score={score} simTime={simTime} onRestart={restart} />
+      <DebugOverlay visible={debugVisible} />
     </div>
   );
 }
