@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { AIRPORTS } from "../../core/constants";
+import { SCENARIOS, buildScenarioAircraft } from "../../core/scenarios";
+import type { Aircraft } from "../../core/types";
 
 interface SimDockProps {
   paused: boolean;
@@ -9,6 +11,7 @@ interface SimDockProps {
   onSpeedChange: (speed: 1 | 2 | 4) => void;
   onRestart: () => void;
   onActiveRunwaysChange: (runways: string[]) => void;
+  onLoadScenario?: (aircraft: Aircraft[]) => void;
 }
 
 function allRunwayTokens(): string[] {
@@ -73,6 +76,14 @@ function SpeedFourIcon() {
   );
 }
 
+function FlaskIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9 3v8L5 19a1 1 0 0 0 .9 1.5h12.2A1 1 0 0 0 19 19l-4-8V3zM9 3h6" />
+    </svg>
+  );
+}
+
 function RunwayIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -89,8 +100,10 @@ export function SimDock({
   onSpeedChange,
   onRestart,
   onActiveRunwaysChange,
+  onLoadScenario,
 }: SimDockProps) {
   const [showRunwayEditor, setShowRunwayEditor] = useState(false);
+  const [showScenarios, setShowScenarios] = useState(false);
 
   const runwayTokens = useMemo(() => allRunwayTokens(), []);
 
@@ -105,6 +118,40 @@ export function SimDock({
 
   return (
     <div className="sim-dock-wrapper">
+      {showScenarios && onLoadScenario && (
+        <div className="sim-dock-popover" role="group" aria-label="Test scenarios">
+          <div className="sim-dock-popover-head">
+            <span>Dev Scenarios</span>
+            <span style={{ fontSize: "0.65rem", color: "#556" }}>dev only</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "4px 0" }}>
+            {Object.entries(SCENARIOS).map(([key, scenario]) => (
+              <button
+                type="button"
+                key={key}
+                style={{
+                  background: "none",
+                  border: "1px solid #1a4a3a",
+                  color: "#8ecfb0",
+                  cursor: "pointer",
+                  padding: "4px 8px",
+                  textAlign: "left",
+                  fontSize: "0.72rem",
+                  borderRadius: 3,
+                }}
+                title={scenario.description}
+                onClick={() => {
+                  onLoadScenario(buildScenarioAircraft(scenario));
+                  setShowScenarios(false);
+                }}
+              >
+                {scenario.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {showRunwayEditor && (
         <div className="sim-dock-popover" role="group" aria-label="Runway selection">
           <div className="sim-dock-popover-head">
@@ -191,6 +238,18 @@ export function SimDock({
         >
           <RunwayIcon />
         </button>
+
+        {import.meta.env.DEV && onLoadScenario && (
+          <button
+            type="button"
+            className={`sim-dock-btn ${showScenarios ? "active" : ""}`}
+            onClick={() => setShowScenarios((v) => !v)}
+            title="Load test scenario"
+            aria-label="Load test scenario"
+          >
+            <FlaskIcon />
+          </button>
+        )}
       </div>
     </div>
   );
