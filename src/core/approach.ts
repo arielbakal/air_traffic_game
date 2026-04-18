@@ -111,12 +111,12 @@ export function updateApproaches(
       if (next.altitude <= runway.elevation + 50) {
         next = {
           ...next,
-          status: "landed",
+          status: "taxiing",
           speed: 0,
           targetSpeed: 0,
           altitude: runway.elevation,
           targetAltitude: runway.elevation,
-          removeAt: time + 10,
+          removeAt: time + 45,
           onApproach: false,
         };
 
