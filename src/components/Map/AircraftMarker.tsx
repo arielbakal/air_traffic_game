@@ -1,6 +1,7 @@
 import { divIcon } from "leaflet";
 import { Marker, Polyline, Tooltip } from "react-leaflet";
 import { projectPosition } from "../../core/physics";
+import { moveAlongHeading } from "../../core/geo";
 import type { Aircraft } from "../../core/types";
 
 interface AircraftMarkerProps {
@@ -46,6 +47,11 @@ function createAircraftIcon(aircraft: Aircraft, severity: AircraftMarkerProps["s
 
 export function AircraftMarker({ aircraft, severity, onSelect }: AircraftMarkerProps) {
   const projected = projectPosition(aircraft, 60);
+  const headingDiff = Math.abs(((aircraft.targetHeading - aircraft.heading) + 540) % 360 - 180);
+  const showTargetVector = headingDiff > 5;
+  const targetProjected = showTargetVector
+    ? moveAlongHeading(aircraft.position, aircraft.targetHeading, (aircraft.speed / 3600) * 90)
+    : null;
 
   return (
     <>
@@ -61,6 +67,20 @@ export function AircraftMarker({ aircraft, severity, onSelect }: AircraftMarkerP
           dashArray: "4 4",
         }}
       />
+      {showTargetVector && targetProjected && (
+        <Polyline
+          positions={[
+            [aircraft.position.lat, aircraft.position.lng],
+            [targetProjected.lat, targetProjected.lng],
+          ]}
+          pathOptions={{
+            color: "#88aaff",
+            weight: 1,
+            opacity: 0.4,
+            dashArray: "2 6",
+          }}
+        />
+      )}
       <Marker
         position={[aircraft.position.lat, aircraft.position.lng]}
         icon={createAircraftIcon(aircraft, severity)}
