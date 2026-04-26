@@ -2,6 +2,10 @@
 
 A browser-based air traffic control simulator for the Buenos Aires TMA, with an optional AI agent controller powered by a local LLM via Ollama.
 
+[![CI](https://github.com/arielbakal/atc-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/arielbakal/atc-simulator/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
+
 ---
 
 ## What it is
@@ -211,3 +215,17 @@ curl http://localhost:3001/api/replay/save
 
 - [`MECHANICS.md`](./MECHANICS.md) — full simulation rules: ILS capture, separation thresholds, scoring, holding, aircraft performance profiles, difficulty scaling
 - [`AGENT.md`](./AGENT.md) — AI agent architecture, LLM prompt, JSON schema, Socket.IO event reference, evaluation harness details
+
+---
+
+## Contributing
+
+Contributions are welcome. Before writing code, read [`CONTRIBUTING.md`](./CONTRIBUTING.md) — it covers setup paths, the architecture map (which file to touch for which kind of change), commit conventions, and what needs a discussion issue before a PR.
+
+For bugs, use the bug report template and include the seed value and difficulty from the debug overlay (`` ` `` key) — the sim is deterministic so reproduction requires this.
+
+---
+
+## License
+
+[MIT](./LICENSE)

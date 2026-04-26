@@ -10,7 +10,8 @@
       "Bash(echo \"EXIT:$?\")",
       "Bash(curl *)",
       "Bash(grep -v \"^$\")",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('conflicts:', d['conflicts'], '| score:', round\\(d['score']\\), '| decisions:', d['agent']['decisionsTotal'] if d['agent'] else 0, '| assessment:', d['lastAssessment'][:120]\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('conflicts:', d['conflicts'], '| score:', round\\(d['score']\\), '| decisions:', d['agent']['decisionsTotal'] if d['agent'] else 0, '| assessment:', d['lastAssessment'][:120]\\)\")",
+      "Bash(grep -v \"^\\\\.\\\\.$\")"
     ]
   }
 }
